@@ -1,0 +1,58 @@
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/cc 
+Build flags: -g;-fprofile-instr-generate
+Id flags:  
+
+The output was:
+1
+cc: error: unrecognized command line option ‘-fprofile-instr-generate’; did you mean ‘-fprofile-generate’?
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/cc 
+Build flags: -g;-fprofile-instr-generate
+Id flags: -c 
+
+The output was:
+1
+cc: error: unrecognized command line option ‘-fprofile-instr-generate’; did you mean ‘-fprofile-generate’?
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/cc 
+Build flags: -g;-fprofile-instr-generate
+Id flags: -Aa 
+
+The output was:
+1
+cc: error: unrecognized command line option ‘-fprofile-instr-generate’; did you mean ‘-fprofile-generate’?
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/cc 
+Build flags: -g;-fprofile-instr-generate
+Id flags: -D__CLASSIC_C__ 
+
+The output was:
+1
+cc: error: unrecognized command line option ‘-fprofile-instr-generate’; did you mean ‘-fprofile-generate’?
+
+
+Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+cc: error: unrecognized command line option ‘-fprofile-instr-generate’; did you mean ‘-fprofile-generate’?
+cc: fatal error: no input files
+compilation terminated.
+Determining if the C compiler works failed with the following output:
+Change Dir: /home/baldr/Documents/c/hg-c-benchmarks/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTC_ec365/fast"
+/usr/bin/gmake -f CMakeFiles/cmTC_ec365.dir/build.make CMakeFiles/cmTC_ec365.dir/build
+gmake[1]: Entering directory '/home/baldr/Documents/c/hg-c-benchmarks/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_ec365.dir/testCCompiler.c.o
+/usr/bin/cc   -g -fprofile-instr-generate    -o CMakeFiles/cmTC_ec365.dir/testCCompiler.c.o   -c /home/baldr/Documents/c/hg-c-benchmarks/build/CMakeFiles/CMakeTmp/testCCompiler.c
+cc: error: unrecognized command line option ‘-fprofile-instr-generate’; did you mean ‘-fprofile-generate’?
+gmake[1]: *** [CMakeFiles/cmTC_ec365.dir/build.make:66: CMakeFiles/cmTC_ec365.dir/testCCompiler.c.o] Error 1
+gmake[1]: Leaving directory '/home/baldr/Documents/c/hg-c-benchmarks/build/CMakeFiles/CMakeTmp'
+gmake: *** [Makefile:126: cmTC_ec365/fast] Error 2
+
+
