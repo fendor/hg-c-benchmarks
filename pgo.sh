@@ -3,16 +3,17 @@
 set -ue
 
 #CONFIG
-BINARY=hg-c-benchmark
+BINARY=Nbody-OpenMP
 
 #CODE
-rm -r build/ 2>/dev/null || true
-mkdir build 2>/dev/null || true
+rm -rf build/
+mkdir build
 cd build
-cmake -DCMAKE_C_FLAGS="-g -fprofile-instr-generate" ..
+echo Building
+cmake -DCMAKE_C_FLAGS="-g -fprofile-generate" ..
 make
-perf record -b ./$(BINARY)
-create_llvm_prof --binary=./$(BINARY) --out=$(BINARY).prof
-cmake -DCMAKE_C_FLAGS="-fprofile-sample-use=code.prof" ..
+echo Recording profile
+sudo perf record -b ./$BINARY 1000 1000
+echo Recompiling
 make
 echo "DONE"

@@ -1,0 +1,1 @@
+gcc -Ofast -Wall -pedantic -fopenmp -g  -Wl,-z,relro -Wl,-z,now -rdynamic -fopenmp CMakeFiles/Nbody-OpenMP.dir/src/nbody.c.o  -o Nbody-OpenMP -lm 

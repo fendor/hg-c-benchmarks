@@ -32,5 +32,6 @@
 *.dSYM/
 *.su
 /cmake-build-debug/
+build/
 .idea/
 !.gitignore

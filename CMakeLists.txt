@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.2)
 project(hg-c-benchmarks)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_C_COMPILER gcc)
+set(CMAKE_C_COMPILER clang)
 set(CMAKE_C_FLAGS "-Ofast -Wall -pedantic -fopenmp")
 
 add_executable(Nbody-OpenMP src/nbody.c)
