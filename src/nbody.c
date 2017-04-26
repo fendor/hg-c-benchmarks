@@ -4,8 +4,8 @@
 #include <sys/time.h>
 #include <omp.h>
 
-#define G (9.8f)
-#define EPS (0.005f)
+#define G (9.8)
+#define EPS (0.005)
 
 struct Float3D {
     double x;
@@ -43,9 +43,9 @@ time_t mytime(void) {
 time_t time_for_tic[TIC_TOC_COUNT];
 
 static void fill_planet(Float3D *p, int i) {
-    p->x = i * 1.0f;
-    p->y = i * 0.2f;
-    p->z = i * 30.0f;
+    p->x = i * 1.0;
+    p->y = i * 0.2;
+    p->z = i * 30.0;
 }
 
 static void free_resources(void) {
@@ -66,14 +66,14 @@ static void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out) {
     double dy = p2.y - p1.y;
     double dz = p2.z - p1.z;
     double distance_sq = dx * dx + dy * dy + dz * dz + EPS;
-    double factor = 1.0f / sqrt(distance_sq * distance_sq * distance_sq);
+    double factor = 1.0 / sqrt(distance_sq * distance_sq * distance_sq);
     out->x += dx * factor;
     out->y += dy * factor;
     out->z += dz * factor;
 }
 
 static void accel(int index) {
-    Float3D acc = {.x = 0.0f, .y = 0.0f, .z = 0.0f};
+    Float3D acc = {.x = 0.0, .y = 0.0, .z = 0.0};
     for (int i = 0; i < size; i++) {
         pair_wise_accel(planets[index], planets[i], &acc);
     }
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
         TIC(0);
         run();
         time_t seq_t = TOC(0);
-        printf("Kernel time: %fs\n", seq_t / 1000000.0f);
+        printf("Kernel time: %fs\n", seq_t / 1000000.0);
 
         FILE *fd = fopen("../nbody.res", "w+");
         if (fd != NULL) {
