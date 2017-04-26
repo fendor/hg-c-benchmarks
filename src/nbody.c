@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
+#include <omp.h>
 
 #define G (9.8f)
 #define EPS (0.005f)
@@ -19,6 +20,7 @@ static Float3D *copy_place = NULL;
 
 static unsigned int size = 3;
 static unsigned int iterations = 10;
+static unsigned int p = 1;
 
 /**
  * gets current time in microseconds
@@ -55,7 +57,7 @@ static void free_resources(void) {
     }
 }
 
-static void pretty_print(void);
+static void pretty_print(FILE *fd);
 
 static void pretty_planet_print(Float3D p, char *msg);
 
@@ -88,9 +90,11 @@ static void swap(void) {
 
 static void run() {
     for (int i = 0; i < iterations; i++) {
+#pragma omp parallel for num_threads(p)
         for (int val = 0; val < size; val++) {
             accel(val);
         }
+
         swap();
     }
 }
@@ -102,20 +106,34 @@ int main(int argc, char **argv) {
     if (argc > 2) {
         iterations = (unsigned int) strtol(argv[2], NULL, 10);
     }
-
+    if (argc > 3) {
+        p = (unsigned int) strtol(argv[3], NULL, 10);
+    }
+    printf("Args: size: %d, iterations: %d, p: %d\n", size, iterations, p);
     planets = (Float3D *) malloc(sizeof(Float3D) * size);
     copy_place = (Float3D *) malloc(sizeof(Float3D) * size);
 
-    for (int i = 0; i < size; i++) {
-        fill_planet(&planets[i], i);
+    if (planets != NULL && copy_place != NULL) {
+
+        for (int i = 0; i < size; i++) {
+            fill_planet(&planets[i], i);
+        }
+        printf("Starting Kernel...\n");
+        TIC(0);
+        run();
+        time_t seq_t = TOC(0);
+        printf("Kernel time: %fs\n", seq_t / 1000000.0f);
+
+        FILE *fd = fopen("../nbody.res", "w+");
+        if (fd != NULL) {
+            pretty_print(fd);
+        } else {
+            pretty_print(stderr);
+        }
+        free_resources();
+    } else {
+        printf("Could not allocate with malloc!");
     }
-    printf("Starting Kernel...\n");
-    TIC(0);
-    run();
-    time_t seq_t = TOC(0);
-    printf("Kernel time: %zu.%zus\n", seq_t / 1000000, seq_t % 1000000);
-    // pretty_print();
-    free_resources();
     return 0;
 }
 
@@ -127,10 +145,11 @@ static void pretty_planet_print(Float3D p, char *msg) {
     }
 }
 
-static void pretty_print() {
+static void pretty_print(FILE *fd) {
     for (int i = 0; i < size; i++) {
         Float3D p = planets[i];
-        pretty_planet_print(p, NULL);
+        fprintf(fd, "(%g, %g, %g)\n", p.x, p.y, p.z);
     }
+    fflush(fd);
 }
 
