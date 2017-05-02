@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
         printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
 
         // print to file
-        FILE *fd = fopen("2d-convolution", "w+");
+        FILE *fd = fopen("../2d-convolution", "w+");
         write_checksum_to(fd, sum_all(image));
         if (fd != NULL) {
             fclose(fd);
@@ -164,6 +164,7 @@ static void parse_args(int argc, char **argv) {
     args.numberOfIterations = 4000;
     args.width = 1024;
     args.height = 1024;
+    args.numberOfProcesses = 1;
 
     // parse the args
     int c;
@@ -215,9 +216,9 @@ static Image *init_image(size_t width, size_t height, double default_val) {
     Image *img = (Image *) malloc(sizeof(Image));
     img->width = width;
     img->height = height;
-    img->image = (double **) malloc(sizeof(double *) * 10);
+    img->image = (double **) malloc(sizeof(double *) * height);
     for (size_t y = 0; y < img->height; ++y) {
-        img->image[y] = (double *) malloc(sizeof(double) * 10);
+        img->image[y] = (double *) malloc(sizeof(double) * width);
         for (size_t x = 0; x < img->width; ++x) {
             img->image[y][x] = default_val;
         }
