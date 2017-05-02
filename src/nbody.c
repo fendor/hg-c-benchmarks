@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
-#include <omp.h>
 
 #define G (9.8)
 #define EPS (0.005)
@@ -130,10 +129,10 @@ int main(int argc, char **argv) {
         } else {
             pretty_print(stderr);
         }
-        free_resources();
     } else {
         printf("Could not allocate with malloc!");
     }
+    free_resources();
     return 0;
 }
 

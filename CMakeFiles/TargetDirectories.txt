@@ -1,3 +1,0 @@
-/home/baldr/Documents/c/hg-c-benchmarks/CMakeFiles/rebuild_cache.dir
-/home/baldr/Documents/c/hg-c-benchmarks/CMakeFiles/edit_cache.dir
-/home/baldr/Documents/c/hg-c-benchmarks/CMakeFiles/Nbody-OpenMP.dir

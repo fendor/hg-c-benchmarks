@@ -3,7 +3,7 @@ project(hg-c-benchmarks)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_COMPILER gcc)
-set(CMAKE_C_FLAGS "-O3 -Wall -pedantic -fopenmp")
+set(CMAKE_C_FLAGS "-O3 -Wall -pedantic")
 
 add_executable(Nbody-OpenMP src/nbody.c)
 set_target_properties(Nbody-OpenMP PROPERTIES COMPILE_FLAGS -fopenmp)
