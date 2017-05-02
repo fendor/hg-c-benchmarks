@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <sys/time.h>
+#include "util.h"
 
 #define G (9.8)
 #define EPS (0.005)
@@ -21,26 +21,6 @@ static unsigned int size = 3;
 static unsigned int iterations = 10;
 static unsigned int p = 1;
 
-/**
- * gets current time in microseconds
- *
- * @return time in microseconds
- */
-time_t mytime(void) {
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    return (now.tv_usec + now.tv_sec * 1000000);
-}
-
-// (re)-start clock
-#define TIC(i) (time_for_tic[i] = mytime())
-// read clock time since last restart
-#define TOC(i) (mytime() - time_for_tic[i])
-
-#define TIC_TOC_COUNT 10
-
-time_t time_for_tic[TIC_TOC_COUNT];
-
 static void fill_planet(Float3D *p, int i) {
     p->x = i * 1.0;
     p->y = i * 0.2;
@@ -57,8 +37,6 @@ static void free_resources(void) {
 }
 
 static void pretty_print(FILE *fd);
-
-static void pretty_planet_print(Float3D p, char *msg);
 
 static void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out) {
     double dx = p2.x - p1.x;
@@ -121,7 +99,7 @@ int main(int argc, char **argv) {
         TIC(0);
         run();
         time_t seq_t = TOC(0);
-        printf("Kernel time: %fs\n", seq_t / 1000000.0);
+        printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
 
         FILE *fd = fopen("../nbody.res", "w+");
         if (fd != NULL) {
@@ -132,16 +110,8 @@ int main(int argc, char **argv) {
     } else {
         printf("Could not allocate with malloc!");
     }
-    free_resources();
+    free_image();
     return 0;
-}
-
-static void pretty_planet_print(Float3D p, char *msg) {
-    if (msg != NULL) {
-        printf("%s: Planet-> x: %f\t y: %f\t z: %f\n", msg, p.x, p.y, p.z);
-    } else {
-        printf("Planet-> x: %f\t y: %f\t z: %f\n", p.x, p.y, p.z);
-    }
 }
 
 static void pretty_print(FILE *fd) {
