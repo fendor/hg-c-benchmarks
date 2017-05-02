@@ -59,11 +59,13 @@ static void accel(int index) {
     copy_place[index].z = G * acc.z;
 }
 
+/*
 static void swap(void) {
     Float3D *tmp = copy_place;
     copy_place = planets;
     planets = tmp;
 }
+ */
 
 static void run() {
     for (int i = 0; i < iterations; i++) {
@@ -72,7 +74,7 @@ static void run() {
             accel(val);
         }
 
-        swap();
+        swap(planets, copy_place);
     }
 }
 
@@ -110,7 +112,7 @@ int main(int argc, char **argv) {
     } else {
         printf("Could not allocate with malloc!");
     }
-    free_image();
+    free_resources();
     return 0;
 }
 
