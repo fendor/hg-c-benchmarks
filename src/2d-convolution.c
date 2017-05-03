@@ -127,12 +127,15 @@ int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
     parse_args(argc, argv);
+    printf("Args -> width: %zu, height: %zu, iterations: %zu, processes: %zu\n", args.width, args.height,
+           args.numberOfIterations, args.numberOfProcesses);
     int returnValue = 0;
     // parse args
     // allocate memory
     Image *image = init_image(args.width, args.height, 1.0);
     Image *kernel = get_default_kernel();
     Image *buffer = copy_shape(image);
+    // sanity check
     if (image != NULL && kernel != NULL && buffer != NULL) {
         // start benchmarking
         printf("Starting Kernel...\n");
@@ -144,7 +147,7 @@ int main(int argc, char **argv) {
         printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
 
         // print to file
-        FILE *fd = fopen("../2d-convolution", "w+");
+        FILE *fd = fopen("../2d-convolution.res", "w+");
         write_checksum_to(fd, sum_all(image));
         if (fd != NULL) {
             fclose(fd);
@@ -264,8 +267,8 @@ static double apply_kernel_to_point(Image *img, Image *kernel, size_t pointX, si
     double val = 0.0;
     for (size_t y = 0; y < kernel->height; ++y) {
         for (size_t x = 0; x < kernel->width; ++x) {
-            size_t imageIndexY = clamp(0, pointY - y + 2, img->height - 1);
-            size_t imageIndexX = clamp(0, pointX - x + 2, img->width - 1);
+            size_t imageIndexY = clamp(0, pointY + y - kernel->height, img->height - 1);
+            size_t imageIndexX = clamp(0, pointX + x - kernel->width, img->width - 1);
             val +=
                     kernel->image[y][x]
                     * img->image[imageIndexY][imageIndexX];
@@ -295,9 +298,7 @@ static void write_checksum_to(FILE *fd, double checksum) {
 
 static void run_default(Image *img, Image *kernel, Image *buffer, size_t numberOfIterations) {
     for (size_t i = 0; i < numberOfIterations; i++) {
-
         apply_kernel_to_image(img, kernel, buffer);
-
-        swap(img, buffer);
+        swap((void **) img, (void **) buffer);
     }
 }

@@ -18,8 +18,8 @@ size_t clamp(size_t lower, size_t val, size_t higher) {
     return val < lower ? lower : higher < val ? higher : val;
 }
 
-void swap(void * ptr, void *other) {
-    void *tmp = ptr;
-    ptr = other;
-    other = tmp;
+void swap(void ** ptr, void **other) {
+    void *tmp = *ptr;
+    *ptr = *other;
+    *other = tmp;
 }

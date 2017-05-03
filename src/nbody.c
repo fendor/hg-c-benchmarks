@@ -74,7 +74,7 @@ static void run() {
             accel(val);
         }
 
-        swap(planets, copy_place);
+        swap((void **) &planets, (void **) &copy_place);
     }
 }
 
