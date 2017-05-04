@@ -193,10 +193,14 @@ static void parse_args(int argc, char **argv) {
                 break;
         }
     }
+
+    if (args.numberOfIterations < 0 || args.height <= 0 || args.width <= 0 || args.numberOfProcesses <= 0) {
+        usage();
+    }
 }
 
 static void usage() {
-    fprintf(stderr, "SYNOPSIS: %s [-p number_of_processes] [-w width] [-h height] [-n iterations]", pgmname);
+    fprintf(stderr, "SYNOPSIS: %s [-p number_of_processes] [-w width] [-h height] [-n iterations]\n", pgmname);
     exit(1);
 }
 
