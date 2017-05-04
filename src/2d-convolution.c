@@ -150,10 +150,10 @@ static void usage();
 
 static void print_args();
 
-static inline double smart_access(Image *img, size_t x, size_t y) ;
+static inline double smart_access(Image *img, size_t x, size_t y);
 
 static inline double
-apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) ;
+apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY);
 
 int main(int argc, char **argv) {
     // argument parsing
@@ -309,6 +309,7 @@ static Image *get_2d_laplace_kernel(void) {
 
 
 static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer) {
+#pragma omp parallel for num_threads(args.numberOfProcesses)
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
             buffer->image[imgHeight][imgWidth] = apply_default_kernel_to_point(img, kernel, imgWidth, imgHeight);
@@ -352,7 +353,7 @@ static inline double smart_access(Image *img, size_t x, size_t y) {
 }
 
 
-static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
+static inline double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
     double val = 0.0;
     for (size_t y = 0; y < kernel->height; ++y) {
         for (size_t x = 0; x < kernel->width; ++x) {
