@@ -6,6 +6,7 @@
 #include<stdlib.h>
 #include <getopt.h>
 #include "util.h"
+#include <immintrin.h>
 
 struct Image {
     size_t width;
@@ -50,6 +51,17 @@ static Image *init_image(size_t width, size_t height, double default_value);
 static Image *get_default_kernel(void);
 
 /**
+ * This Image is equal to the following Kernel
+ *    0  1  0
+ *    1 -4  0
+ *    0  1  0
+ *
+ * @return Return laplace Kernel Image
+ */
+static Image *get_2d_laplace_kernel(void);
+
+
+/**
  * Free the allocated resources of an image pointer including the image struct itself
  * @param image Image which shall be freed
  */
@@ -72,7 +84,7 @@ static Image *copy_shape(Image *img);
  * @param kernel Kernel to apply to each pixel of the image
  * @param buffer Output buffer
  */
-static void apply_kernel_to_image(Image *img, Image *kernel, Image *buffer);
+static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer);
 
 /**
  * Apply a given kernel on a pixel of an image.
@@ -84,7 +96,7 @@ static void apply_kernel_to_image(Image *img, Image *kernel, Image *buffer);
  * @param pointY y value of the image that is being investigated
  * @return Computed kernel value for the coordinate (pointX, pointY)
  */
-static double apply_kernel_to_point(Image *img, Image *kernel, size_t pointX, size_t pointY);
+static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY);
 
 /**
  * Sum all pixels of the given image
@@ -108,7 +120,13 @@ static void write_checksum_to(FILE *fd, double checksum);
  * @param buffer Buffer image to avoid repeated allocation
  * @param numberOfIterations number of iterations to apply the kernel to the image
  */
-static void run_default(Image *img, Image *kernel, Image *buffer, size_t numberOfIterations);
+static void run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations);
+
+/**
+ * Helper function to print the image in an easy way to read
+ * @param img Image that shall be printed, line based
+ */
+static void print_image(Image *img);
 
 /**
  * Parse the args according to getopt
@@ -119,16 +137,24 @@ static void run_default(Image *img, Image *kernel, Image *buffer, size_t numberO
 static void parse_args(int argc, char **argv);
 
 /**
+ *
+ * @param fd
+ * @return
+ */
+static Image *read_image_from_fd(FILE *fd);
+
+/**
  * Prints Synopsis of the program
  */
 static void usage();
+
+static void print_args();
 
 int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
     parse_args(argc, argv);
-    printf("Args -> width: %zu, height: %zu, iterations: %zu, processes: %zu\n", args.width, args.height,
-           args.numberOfIterations, args.numberOfProcesses);
+    print_args();
     int returnValue = 0;
     // parse args
     // allocate memory
@@ -160,6 +186,12 @@ int main(int argc, char **argv) {
     free_image(kernel);
     free_image(buffer);
     return returnValue;
+}
+
+static void print_args() {
+    printf("Args -> width: %zu, height: %zu, iterations: %zu, processes: %zu\n", args.width, args.height,
+           args.numberOfIterations, args.numberOfProcesses
+    );
 }
 
 static void parse_args(int argc, char **argv) {
@@ -259,7 +291,19 @@ static Image *get_default_kernel(void) {
     return img;
 }
 
-static void apply_kernel_to_image(Image *img, Image *kernel, Image *buffer) {
+static Image *get_2d_laplace_kernel(void) {
+    Image *img = init_image(3, 3, 0);
+    img->image[1][1] = -4;
+    img->image[0][1] = 1;
+    img->image[2][1] = 1;
+    img->image[1][0] = 1;
+    img->image[1][2] = 1;
+
+    return img;
+}
+
+
+static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer) {
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
             buffer->image[imgHeight][imgWidth] = apply_kernel_to_point(img, kernel, imgWidth, imgHeight);
@@ -267,12 +311,12 @@ static void apply_kernel_to_image(Image *img, Image *kernel, Image *buffer) {
     }
 }
 
-static double apply_kernel_to_point(Image *img, Image *kernel, size_t pointX, size_t pointY) {
+static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
     double val = 0.0;
     for (size_t y = 0; y < kernel->height; ++y) {
         for (size_t x = 0; x < kernel->width; ++x) {
-            size_t imageIndexY = clamp(0, pointY + y - kernel->height, img->height - 1);
-            size_t imageIndexX = clamp(0, pointX + x - kernel->width, img->width - 1);
+            size_t imageIndexY = clamp(0, pointY + y - kernel->height / 2, img->height - 1);
+            size_t imageIndexX = clamp(0, pointX + x - kernel->width / 2, img->width - 1);
             val +=
                     kernel->image[y][x]
                     * img->image[imageIndexY][imageIndexX];
@@ -300,9 +344,30 @@ static void write_checksum_to(FILE *fd, double checksum) {
     }
 }
 
-static void run_default(Image *img, Image *kernel, Image *buffer, size_t numberOfIterations) {
+static void run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations) {
     for (size_t i = 0; i < numberOfIterations; i++) {
         apply_kernel_to_image(img, kernel, buffer);
         swap_ptr((void **) img, (void **) buffer);
     }
+}
+
+static void print_image(Image *img) {
+    for (int height = 0; height < img->height; ++height) {
+        for (int width = 0; width < img->width; ++width) {
+            char *format = NULL;
+            if (img->image[height][width] < 0) {
+                format = "%.02f\t";
+            } else {
+                format = " %.02f\t";
+            }
+            printf(format, img->image[height][width]);
+        }
+        printf("\n");
+    }
+}
+
+static Image *read_image_from_fd(FILE *fd) {
+    char buf[100];
+
+    return NULL;
 }
