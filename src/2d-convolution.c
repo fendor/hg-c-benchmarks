@@ -14,7 +14,17 @@ struct Image {
     double **image;
 };
 
-struct Args {
+struct Kernel {
+    __m256d k1;// = _mm256_set_pd(kernel->image[0][0], kernel->image[0][1], kernel->image[0][2], kernel->image[0][3]);
+    __m256d k2;// = _mm256_set_pd(kernel->image[0][4], kernel->image[1][0], kernel->image[1][1], kernel->image[1][2]);
+    __m256d k3;// = _mm256_set_pd(kernel->image[1][3], kernel->image[1][4], kernel->image[2][0], kernel->image[2][1]);
+    __m256d k4;// = _mm256_set_pd(kernel->image[2][2], kernel->image[2][3], kernel->image[2][4], kernel->image[3][0]);
+    __m256d k5;// = _mm256_set_pd(kernel->image[3][1], kernel->image[3][2], kernel->image[3][3], kernel->image[3][4]);
+    __m256d k6;// = _mm256_set_pd(kernel->image[4][0], kernel->image[4][1], kernel->image[4][2], kernel->image[4][3]);
+    __m256d k7;// = _mm256_set_pd(kernel->image[4][4], 0, 0, 0);
+} kernel;
+
+struct {
     size_t numberOfIterations;
     size_t numberOfProcesses;
     size_t width;
@@ -27,6 +37,7 @@ static char *pgmname;
  * Typedef for easier usage
  */
 typedef struct Image Image;
+typedef struct Kernel Kernel;
 
 /**
  * Initialize an image
@@ -48,7 +59,7 @@ static Image *init_image(size_t width, size_t height, double default_value);
  *
  * @return Return default Kernel Image for comparison to the haskell version
  */
-static Image *get_default_kernel(void);
+static void get_default_kernel(void);
 
 /**
  * This Image is equal to the following Kernel
@@ -84,7 +95,7 @@ static Image *copy_shape(Image *img);
  * @param kernel Kernel to apply to each pixel of the image
  * @param buffer Output buffer
  */
-static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer);
+static void apply_kernel_to_image(Image *restrict img, Kernel *restrict kernel, Image *buffer);
 
 /**
  * Apply a given kernel on a pixel of an image.
@@ -120,7 +131,8 @@ static void write_checksum_to(FILE *fd, double checksum);
  * @param buffer Buffer image to avoid repeated allocation
  * @param numberOfIterations number of iterations to apply the kernel to the image
  */
-static void run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations);
+static void
+run_default(Image *restrict img, Kernel *restrict kernel, Image *restrict buffer, size_t numberOfIterations);
 
 /**
  * Helper function to print the image in an easy way to read
@@ -150,6 +162,13 @@ static void usage();
 
 static void print_args();
 
+static inline double smart_access(Image *img, size_t x, size_t y);
+
+static inline double
+apply_default_kernel_to_point(Image *restrict img, Kernel *restrict kernel, size_t pointX, size_t pointY);
+
+void free_kernel(Kernel *kernel);
+
 int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
@@ -159,14 +178,14 @@ int main(int argc, char **argv) {
     // parse args
     // allocate memory
     Image *image = init_image(args.width, args.height, 1.0);
-    Image *kernel = get_default_kernel();
+    get_default_kernel();
     Image *buffer = copy_shape(image);
     // sanity check
-    if (image != NULL && kernel != NULL && buffer != NULL) {
+    if (image != NULL && buffer != NULL) {
         // start benchmarking
         printf("Starting Kernel...\n");
         TIC(0);
-        run_default(image, kernel, buffer, args.numberOfIterations);
+        run_default(image, &kernel, buffer, args.numberOfIterations);
         time_t seq_t = TOC(0);
 
         // print kernel time
@@ -183,9 +202,15 @@ int main(int argc, char **argv) {
     }
     // free resources
     free_image(image);
-    free_image(kernel);
+    // free_kernel(kernel);
     free_image(buffer);
     return returnValue;
+}
+
+void free_kernel(Kernel *kernel) {
+    if (kernel != NULL) {
+        free(kernel);
+    }
 }
 
 static void print_args() {
@@ -273,7 +298,8 @@ static Image *copy_shape(Image *img) {
     }
 }
 
-static Image *get_default_kernel(void) {
+static void get_default_kernel(void) {
+    printf("get_default_kernel\n");
     Image *img = init_image(5, 5, 0);
     for (int height = 0; height < img->height; ++height) {
         for (int width = 0; width < img->width; ++width) {
@@ -288,7 +314,17 @@ static Image *get_default_kernel(void) {
             }
         }
     }
-    return img;
+    printf("malloc new kernel\n");
+    printf("line: %f %f %f %f\n", img->image[0][0], img->image[0][1], img->image[0][2], img->image[0][3]);
+    kernel.k1 = _mm256_set_pd(img->image[0][0], img->image[0][1], img->image[0][2], img->image[0][3]);
+    kernel.k2 = _mm256_set_pd(img->image[0][4], img->image[1][0], img->image[1][1], img->image[1][2]);
+    kernel.k3 = _mm256_set_pd(img->image[1][3], img->image[1][4], img->image[2][0], img->image[2][1]);
+    kernel.k4 = _mm256_set_pd(img->image[2][2], img->image[2][3], img->image[2][4], img->image[3][0]);
+    kernel.k5 = _mm256_set_pd(img->image[3][1], img->image[3][2], img->image[3][3], img->image[3][4]);
+    kernel.k6 = _mm256_set_pd(img->image[4][0], img->image[4][1], img->image[4][2], img->image[4][3]);
+    kernel.k7 = _mm256_set_pd(img->image[4][4], 0, 0, 0);
+    printf("filled kernel\n");
+
 }
 
 static Image *get_2d_laplace_kernel(void) {
@@ -303,15 +339,15 @@ static Image *get_2d_laplace_kernel(void) {
 }
 
 
-static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer) {
+static void apply_kernel_to_image(Image *restrict img, Kernel *restrict kernel, Image *buffer) {
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            buffer->image[imgHeight][imgWidth] = apply_kernel_to_point(img, kernel, imgWidth, imgHeight);
+            buffer->image[imgHeight][imgWidth] = apply_default_kernel_to_point(img, kernel, imgWidth, imgHeight);
         }
     }
 }
 
-static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
+static inline double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
     double val = 0.0;
     for (size_t y = 0; y < kernel->height; ++y) {
         for (size_t x = 0; x < kernel->width; ++x) {
@@ -322,8 +358,75 @@ static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel,
                     * img->image[imageIndexY][imageIndexX];
         }
     }
-
     return val;
+}
+
+static inline double
+apply_default_kernel_to_point(Image *restrict img, Kernel *restrict kernel, size_t pointX, size_t pointY) {
+    // read image coordinates to vector
+    __m256d img1 = _mm256_set_pd(smart_access(img, pointX - 2, pointY - 2), smart_access(img, pointX - 1, pointY - 2),
+                                 smart_access(img, pointX, pointY - 2), smart_access(img, pointX + 1, pointY - 2));
+    __m256d img2 = _mm256_set_pd(smart_access(img, pointX + 2, pointY - 2), smart_access(img, pointX - 2, pointY - 1),
+                                 smart_access(img, pointX - 1, pointY - 1), smart_access(img, pointX, pointY - 1));
+    __m256d img3 = _mm256_set_pd(smart_access(img, pointX + 1, pointY - 1), smart_access(img, pointX + 2, pointY - 1),
+                                 smart_access(img, pointX - 2, pointY), smart_access(img, pointX - 1, pointY));
+    __m256d img4 = _mm256_set_pd(smart_access(img, pointX, pointY), smart_access(img, pointX + 1, pointY),
+                                 smart_access(img, pointX + 2, pointY), smart_access(img, pointX - 2, pointY + 1));
+    __m256d img5 = _mm256_set_pd(smart_access(img, pointX - 1, pointY + 1), smart_access(img, pointX, pointY + 1),
+                                 smart_access(img, pointX + 1, pointY + 1), smart_access(img, pointX + 2, pointY + 1));
+    __m256d img6 = _mm256_set_pd(smart_access(img, pointX - 2, pointY + 2), smart_access(img, pointX - 1, pointY + 2),
+                                 smart_access(img, pointX, pointY + 2), smart_access(img, pointX + 1, pointY + 2));
+    __m256d img7 = _mm256_set_pd(smart_access(img, pointX + 2, pointY + 2), 0, 0, 0);
+
+    __m256d result1 = _mm256_mul_pd(kernel->k1, img1);
+    __m256d result2 = _mm256_mul_pd(kernel->k2, img2);
+    __m256d result3 = _mm256_mul_pd(kernel->k3, img3);
+    __m256d result4 = _mm256_mul_pd(kernel->k4, img4);
+    __m256d result5 = _mm256_mul_pd(kernel->k5, img5);
+    __m256d result6 = _mm256_mul_pd(kernel->k6, img6);
+    __m256d result7 = _mm256_mul_pd(kernel->k7, img7);
+
+    __m256d res = _mm256_hadd_pd(result1, result2);
+    res = _mm256_hadd_pd(res, result3);
+    res = _mm256_hadd_pd(res, result4);
+    res = _mm256_hadd_pd(res, result5);
+    res = _mm256_hadd_pd(res, result6);
+    res = _mm256_hadd_pd(res, result7);
+
+    double *e = &res;
+    return e[0] + e[1] + e[2] + e[3];
+    /*
+    return
+            +kernel->image[0][0] * smart_access(img, pointX - 2, pointY - 2)
+            + kernel->image[0][1] * smart_access(img, pointX - 1, pointY - 2)
+            + kernel->image[0][2] * smart_access(img, pointX, pointY - 2)
+            + kernel->image[0][3] * smart_access(img, pointX + 1, pointY - 2)
+            + kernel->image[0][4] * smart_access(img, pointX + 2, pointY - 2)
+            + kernel->image[1][0] * smart_access(img, pointX - 2, pointY - 1)
+            + kernel->image[1][1] * smart_access(img, pointX - 1, pointY - 1)
+            + kernel->image[1][2] * smart_access(img, pointX, pointY - 1)
+            + kernel->image[1][3] * smart_access(img, pointX + 1, pointY - 1)
+            + kernel->image[1][4] * smart_access(img, pointX + 2, pointY - 1)
+            + kernel->image[2][0] * smart_access(img, pointX - 2, pointY)
+            + kernel->image[2][1] * smart_access(img, pointX - 1, pointY)
+            + kernel->image[2][2] * smart_access(img, pointX, pointY)
+            + kernel->image[2][3] * smart_access(img, pointX + 1, pointY)
+            + kernel->image[2][4] * smart_access(img, pointX + 2, pointY)
+            + kernel->image[3][0] * smart_access(img, pointX - 2, pointY + 1)
+            + kernel->image[3][1] * smart_access(img, pointX - 1, pointY + 1)
+            + kernel->image[3][2] * smart_access(img, pointX, pointY + 1)
+            + kernel->image[3][3] * smart_access(img, pointX + 1, pointY + 1)
+            + kernel->image[3][4] * smart_access(img, pointX + 2, pointY + 1)
+            + kernel->image[4][0] * smart_access(img, pointX - 2, pointY + 2)
+            + kernel->image[4][1] * smart_access(img, pointX - 1, pointY + 2)
+            + kernel->image[4][2] * smart_access(img, pointX, pointY + 2)
+            + kernel->image[4][3] * smart_access(img, pointX + 1, pointY + 2)
+            + kernel->image[4][4] * smart_access(img, pointX + 2, pointY + 2)
+        //*/
+}
+
+static inline double smart_access(Image *img, size_t x, size_t y) {
+    return img->image[clamp(0, y, img->height - 1)][clamp(0, x, img->width - 1)];
 }
 
 static double sum_all(Image *img) {
@@ -344,7 +447,8 @@ static void write_checksum_to(FILE *fd, double checksum) {
     }
 }
 
-static void run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations) {
+static void
+run_default(Image *restrict img, Kernel *restrict kernel, Image *restrict buffer, size_t numberOfIterations) {
     for (size_t i = 0; i < numberOfIterations; i++) {
         apply_kernel_to_image(img, kernel, buffer);
         swap_ptr((void **) img, (void **) buffer);
