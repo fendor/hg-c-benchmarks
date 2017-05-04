@@ -6,7 +6,7 @@
 #include<stdlib.h>
 #include <getopt.h>
 #include "util.h"
-#include <immintrin.h>
+#include <stdbool.h>
 
 struct Image {
     size_t width;
@@ -14,11 +14,12 @@ struct Image {
     double **image;
 };
 
-struct Args {
+struct {
     size_t numberOfIterations;
     size_t numberOfProcesses;
     size_t width;
     size_t height;
+    bool debug;
 } args;
 
 static char *pgmname;
@@ -159,13 +160,17 @@ int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
     parse_args(argc, argv);
-    print_args();
-    int returnValue = 0;
+    if (args.debug) {
+        print_args();
+    }
     // parse args
     // allocate memory
     Image *image = init_image(args.width, args.height, 1.0);
     Image *kernel = get_default_kernel();
     Image *buffer = copy_shape(image);
+    if (args.debug) {
+        print_image(kernel);
+    }
     // sanity check
     if (image != NULL && kernel != NULL && buffer != NULL) {
         // start benchmarking
@@ -184,13 +189,17 @@ int main(int argc, char **argv) {
             fclose(fd);
         }
     } else {
-        returnValue = 1;
+        // free resources
+        free_image(image);
+        free_image(kernel);
+        free_image(buffer);
+        exit(EXIT_FAILURE);
     }
     // free resources
     free_image(image);
     free_image(kernel);
     free_image(buffer);
-    return returnValue;
+    return 0;
 }
 
 static void print_args() {
@@ -205,11 +214,15 @@ static void parse_args(int argc, char **argv) {
     args.width = 1024;
     args.height = 1024;
     args.numberOfProcesses = 1;
+    args.debug = false;
 
     // parse the args
     int c;
-    while ((c = getopt(argc, argv, "?n:p:w:h:")) != -1) {
+    while ((c = getopt(argc, argv, "?dn:p:w:h:")) != -1) {
         switch (c) {
+            case 'd':
+                args.debug = true;
+                break;
             case 'n':
                 args.numberOfIterations = (size_t) strtol(optarg, NULL, 10);
                 break;
@@ -237,7 +250,7 @@ static void parse_args(int argc, char **argv) {
 }
 
 static void usage() {
-    fprintf(stderr, "SYNOPSIS: %s [-p number_of_processes] [-w width] [-h height] [-n iterations]\n", pgmname);
+    fprintf(stderr, "SYNOPSIS: %s [-d] [-p number_of_processes] [-w width] [-h height] [-n iterations]\n", pgmname);
     exit(1);
 }
 
