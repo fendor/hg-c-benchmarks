@@ -150,6 +150,11 @@ static void usage();
 
 static void print_args();
 
+static inline double smart_access(Image *img, size_t x, size_t y) ;
+
+static inline double
+apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) ;
+
 int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
@@ -306,10 +311,46 @@ static Image *get_2d_laplace_kernel(void) {
 static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer) {
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            buffer->image[imgHeight][imgWidth] = apply_kernel_to_point(img, kernel, imgWidth, imgHeight);
+            buffer->image[imgHeight][imgWidth] = apply_default_kernel_to_point(img, kernel, imgWidth, imgHeight);
         }
     }
 }
+
+static inline double
+apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
+    return 0.0
+           + kernel->image[0][0] * smart_access(img, pointX - 2, pointY - 2)
+           + kernel->image[0][1] * smart_access(img, pointX - 1, pointY - 2)
+           + kernel->image[0][2] * smart_access(img, pointX, pointY - 2)
+           + kernel->image[0][3] * smart_access(img, pointX + 1, pointY - 2)
+           + kernel->image[0][4] * smart_access(img, pointX + 2, pointY - 2)
+           + kernel->image[1][0] * smart_access(img, pointX - 2, pointY - 1)
+           + kernel->image[1][1] * smart_access(img, pointX - 1, pointY - 1)
+           + kernel->image[1][2] * smart_access(img, pointX, pointY - 1)
+           + kernel->image[1][3] * smart_access(img, pointX + 1, pointY - 1)
+           + kernel->image[1][4] * smart_access(img, pointX + 2, pointY - 1)
+           + kernel->image[2][0] * smart_access(img, pointX - 2, pointY)
+           + kernel->image[2][1] * smart_access(img, pointX - 1, pointY)
+           + kernel->image[2][2] * smart_access(img, pointX, pointY)
+           + kernel->image[2][3] * smart_access(img, pointX + 1, pointY)
+           + kernel->image[2][4] * smart_access(img, pointX + 2, pointY)
+           + kernel->image[3][0] * smart_access(img, pointX - 2, pointY + 1)
+           + kernel->image[3][1] * smart_access(img, pointX - 1, pointY + 1)
+           + kernel->image[3][2] * smart_access(img, pointX, pointY + 1)
+           + kernel->image[3][3] * smart_access(img, pointX + 1, pointY + 1)
+           + kernel->image[3][4] * smart_access(img, pointX + 2, pointY + 1)
+           + kernel->image[4][0] * smart_access(img, pointX - 2, pointY + 2)
+           + kernel->image[4][1] * smart_access(img, pointX - 1, pointY + 2)
+           + kernel->image[4][2] * smart_access(img, pointX, pointY + 2)
+           + kernel->image[4][3] * smart_access(img, pointX + 1, pointY + 2)
+           + kernel->image[4][4] * smart_access(img, pointX + 2, pointY + 2);
+
+}
+
+static inline double smart_access(Image *img, size_t x, size_t y) {
+    return img->image[clamp(0, y, img->height - 1)][clamp(0, x, img->width - 1)];
+}
+
 
 static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
     double val = 0.0;
@@ -344,7 +385,8 @@ static void write_checksum_to(FILE *fd, double checksum) {
     }
 }
 
-static void run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations) {
+static void
+run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations) {
     for (size_t i = 0; i < numberOfIterations; i++) {
         apply_kernel_to_image(img, kernel, buffer);
         swap_ptr((void **) img, (void **) buffer);
