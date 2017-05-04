@@ -31,6 +31,6 @@ size_t clamp(size_t lower, size_t value, size_t upper);
  * @param ptr First pointer to swap
  * @param other Second pointer to swap
  */
-void swap(void **ptr, void **other);
+void swap_ptr(void **ptr, void **other);
 
 #endif //HG_C_BENCHMARKS_UTIL_H

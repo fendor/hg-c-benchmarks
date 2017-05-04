@@ -60,7 +60,7 @@ static void accel(int index) {
 }
 
 /*
-static void swap(void) {
+static void swap_ptr(void) {
     Float3D *tmp = copy_place;
     copy_place = planets;
     planets = tmp;
@@ -74,7 +74,7 @@ static void run() {
             accel(val);
         }
 
-        swap((void **) &planets, (void **) &copy_place);
+        swap_ptr((void **) &planets, (void **) &copy_place);
     }
 }
 

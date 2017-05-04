@@ -299,6 +299,6 @@ static void write_checksum_to(FILE *fd, double checksum) {
 static void run_default(Image *img, Image *kernel, Image *buffer, size_t numberOfIterations) {
     for (size_t i = 0; i < numberOfIterations; i++) {
         apply_kernel_to_image(img, kernel, buffer);
-        swap((void **) img, (void **) buffer);
+        swap_ptr((void **) img, (void **) buffer);
     }
 }
