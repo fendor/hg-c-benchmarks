@@ -7,7 +7,9 @@
 #include <getopt.h>
 #include "util.h"
 #include <stdbool.h>
+#include <string.h>
 
+#define MAX_SIZE 16384
 struct Image {
     size_t width;
     size_t height;
@@ -15,11 +17,17 @@ struct Image {
 };
 
 struct {
-    size_t numberOfIterations;
-    size_t numberOfProcesses;
+    bool debug;
+    bool opt_image_from_file;
+    bool opt_kernel_from_file;
+    bool opt_width;
+    bool opt_height;
+    size_t number_of_iterations;
+    size_t number_of_processes;
     size_t width;
     size_t height;
-    bool debug;
+    char *image_file_path;
+    char *kernel_file_path;
 } args;
 
 static char *pgmname;
@@ -119,9 +127,10 @@ static void write_checksum_to(FILE *fd, double checksum);
  * @param img Image to apply the kernel to
  * @param kernel Kernel to apply on the image
  * @param buffer Buffer image to avoid repeated allocation
- * @param numberOfIterations number of iterations to apply the kernel to the image
+ * @param number_of_iterations number of iterations to apply the kernel to the image
  */
-static void run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations);
+static void
+run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t number_of_iterations);
 
 /**
  * Helper function to print the image in an easy way to read
@@ -156,6 +165,8 @@ static inline double smart_access(Image *img, size_t x, size_t y);
 static inline double
 apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY);
 
+static void bail_out(char *string);
+
 int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
@@ -165,8 +176,20 @@ int main(int argc, char **argv) {
     }
     // parse args
     // allocate memory
-    Image *image = init_image(args.width, args.height, 1.0);
-    Image *kernel = get_default_kernel();
+    Image *image;
+    if (args.opt_image_from_file) {
+        FILE *fd = fopen(args.image_file_path, "r");
+        image = read_image_from_fd(fd);
+    } else {
+        image = init_image(args.width, args.height, 1.0);
+    }
+    Image *kernel;
+    if (args.opt_kernel_from_file) {
+        FILE *fd = fopen(args.kernel_file_path, "r");
+        kernel = read_image_from_fd(fd);
+    } else {
+        kernel = get_default_kernel();
+    }
     Image *buffer = copy_shape(image);
     if (args.debug) {
         print_image(kernel);
@@ -176,7 +199,7 @@ int main(int argc, char **argv) {
         // start benchmarking
         printf("Starting Kernel...\n");
         TIC(0);
-        run_default(image, kernel, buffer, args.numberOfIterations);
+        run_default(image, kernel, buffer, args.number_of_iterations);
         time_t seq_t = TOC(0);
 
         // print kernel time
@@ -203,36 +226,58 @@ int main(int argc, char **argv) {
 }
 
 static void print_args() {
-    printf("Args -> width: %zu, height: %zu, iterations: %zu, processes: %zu\n", args.width, args.height,
-           args.numberOfIterations, args.numberOfProcesses
+    printf("Args: width: %zu, height: %zu, iterations: %zu, processes: %zu\n", args.width, args.height,
+           args.number_of_iterations, args.number_of_processes
     );
+    printf("\topt_image_file: %d\n", args.opt_image_from_file);
+    if (args.opt_image_from_file) {
+        printf("\topt_image_file_path: %s\n", args.image_file_path);
+    }
+    printf("\topt_kernel_file: %d\n", args.opt_kernel_from_file);
+    if (args.opt_kernel_from_file) {
+        printf("\topt_image_file_path: %s\n", args.kernel_file_path);
+    }
 }
 
 static void parse_args(int argc, char **argv) {
     // default values according to the haskell program
-    args.numberOfIterations = 4000;
+    args.number_of_iterations = 4000;
     args.width = 1024;
     args.height = 1024;
-    args.numberOfProcesses = 1;
+    args.number_of_processes = 1;
     args.debug = false;
+    args.opt_image_from_file = false;
+    args.opt_kernel_from_file = false;
+    args.opt_width = false;
+    args.opt_height = false;
 
     // parse the args
     int c;
-    while ((c = getopt(argc, argv, "?dn:p:w:h:")) != -1) {
+    while ((c = getopt(argc, argv, "?dn:p:w:h:k:f:")) != -1) {
         switch (c) {
             case 'd':
                 args.debug = true;
                 break;
+            case 'k':
+                args.opt_kernel_from_file = true;
+                args.kernel_file_path = optarg;
+                break;
+            case 'f':
+                args.opt_image_from_file = true;
+                args.image_file_path = optarg;
+                break;
             case 'n':
-                args.numberOfIterations = (size_t) strtol(optarg, NULL, 10);
+                args.number_of_iterations = (size_t) strtol(optarg, NULL, 10);
                 break;
             case 'p':
-                args.numberOfProcesses = (size_t) strtol(optarg, NULL, 10);
+                args.number_of_processes = (size_t) strtol(optarg, NULL, 10);
                 break;
             case 'w':
+                args.opt_width = true;
                 args.width = (size_t) strtol(optarg, NULL, 10);
                 break;
             case 'h':
+                args.opt_height = true;
                 args.height = (size_t) strtol(optarg, NULL, 10);
                 break;
             case '?':
@@ -244,13 +289,19 @@ static void parse_args(int argc, char **argv) {
         }
     }
 
-    if (args.height == 0 || args.width == 0 || args.numberOfProcesses == 0) {
+    if (args.opt_image_from_file && (args.opt_width || args.opt_height)) {
+        usage();
+    }
+
+    if (args.height == 0 || args.width == 0 || args.number_of_processes == 0) {
         usage();
     }
 }
 
 static void usage() {
-    fprintf(stderr, "SYNOPSIS: %s [-d] [-p number_of_processes] [-w width] [-h height] [-n iterations]\n", pgmname);
+    fprintf(stderr,
+            "SYNOPSIS: %s [-d] [-p number_of_processes] ([-w width] [-h height] || -f image_file_name) [-k kernel_file_name] [-n iterations]\n",
+            pgmname);
     exit(1);
 }
 
@@ -322,7 +373,7 @@ static Image *get_2d_laplace_kernel(void) {
 
 
 static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer) {
-#pragma omp parallel for num_threads(args.numberOfProcesses)
+#pragma omp parallel for num_threads(args.number_of_processes)
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
             buffer->image[imgHeight][imgWidth] = apply_default_kernel_to_point(img, kernel, imgWidth, imgHeight);
@@ -400,8 +451,8 @@ static void write_checksum_to(FILE *fd, double checksum) {
 }
 
 static void
-run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t numberOfIterations) {
-    for (size_t i = 0; i < numberOfIterations; i++) {
+run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t number_of_iterations) {
+    for (size_t i = 0; i < number_of_iterations; i++) {
         apply_kernel_to_image(img, kernel, buffer);
         swap_ptr((void **) img, (void **) buffer);
     }
@@ -423,7 +474,44 @@ static void print_image(Image *img) {
 }
 
 static Image *read_image_from_fd(FILE *fd) {
-    char buf[100];
+    if (fd != NULL) {
+        char buf[MAX_SIZE];
+        if (fgets(buf, MAX_SIZE, fd) != NULL) { ;
+            char *token = NULL;
+            token = strtok(buf, " ");
+            if (NULL == token) bail_out("height couldn't be read from file");
+            size_t height = (size_t) strtol(token, NULL, 10);
+            token = strtok(buf, " ");
+            if (NULL == token) bail_out("width couldn't be read from file");
+            size_t width = (size_t) strtol(token, NULL, 10);
 
+            Image *img = init_image(width, height, 0.0);
+
+            for (int y = 0; y < height; ++y) {
+                if (NULL != fgets(buf, MAX_SIZE, fd)) {
+                    token = strtok(buf, " ");
+                    for (int x = 0; x < width; ++x) {
+                        if (token != NULL) {
+                            img->image[y][x] = strtod(token, NULL);
+                        } else {
+                            bail_out("the file dimensions were not correct, less number of lines than given width");
+                        }
+                        token = strtok(NULL, " ");
+                    }
+                } else {
+                    bail_out("the file did not have enough lines to read");
+                }
+            }
+
+            return img;
+        }
+    } else {
+        bail_out("file descriptor couldn't was closed");
+    }
     return NULL;
+}
+
+static void bail_out(char *string) {
+    fprintf(stderr, "Error: %s: %s", pgmname, string);
+    exit(2);
 }
