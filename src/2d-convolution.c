@@ -10,10 +10,14 @@
 #include <string.h>
 
 #define MAX_SIZE 16384
+
+#define ACCESS_IMG(img, x, y, width) (img[(2+(y))*(width)+(x)+2])
+#define ACCESS_KERNEL(img, x, y, width) (img[(y)*(width) + (x)])
+
 struct Image {
     size_t width;
     size_t height;
-    double **image;
+    double *image;
 };
 
 struct {
@@ -58,16 +62,6 @@ static Image *init_image(size_t width, size_t height, double default_value);
  * @return Return default Kernel Image for comparison to the haskell version
  */
 static Image *get_default_kernel(void);
-
-/**
- * This Image is equal to the following Kernel
- *    0  1  0
- *    1 -4  0
- *    0  1  0
- *
- * @return Return laplace Kernel Image
- */
-static Image *get_2d_laplace_kernel(void);
 
 
 /**
@@ -160,16 +154,18 @@ static void usage();
 
 static void print_args();
 
-static inline double smart_access(Image *img, size_t x, size_t y);
 
 static inline double
 apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY);
 
 static void bail_out(char *string);
 
+static void print_kernel(Image *img);
+
 int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
+
     parse_args(argc, argv);
     if (args.debug) {
         print_args();
@@ -192,7 +188,7 @@ int main(int argc, char **argv) {
     }
     Image *buffer = copy_shape(image);
     if (args.debug) {
-        print_image(kernel);
+        print_kernel(kernel);
     }
     // sanity check
     if (image != NULL && kernel != NULL && buffer != NULL) {
@@ -212,7 +208,7 @@ int main(int argc, char **argv) {
             fclose(fd);
         }
     } else {
-        // free resources
+        // free resources, just to be sure
         free_image(image);
         free_image(kernel);
         free_image(buffer);
@@ -222,6 +218,7 @@ int main(int argc, char **argv) {
     free_image(image);
     free_image(kernel);
     free_image(buffer);
+
     return 0;
 }
 
@@ -308,11 +305,12 @@ static void usage() {
 
 static void free_image(Image *image) {
     if (image != NULL) {
-        for (int height = 0; height < image->height; ++height) {
+        /*for (int height = 0; height < image->height; ++height) {
             if (image->image[height] != NULL) {
                 free(image->image[height]);
             }
         }
+        // */
         if (image->image != NULL) {
             free(image->image);
         }
@@ -324,15 +322,30 @@ static Image *init_image(size_t width, size_t height, double default_val) {
     Image *img = (Image *) malloc(sizeof(Image));
     img->width = width;
     img->height = height;
-    img->image = (double **) malloc(sizeof(double *) * height);
-    for (size_t y = 0; y < img->height; ++y) {
-        img->image[y] = (double *) malloc(sizeof(double) * width);
-        for (size_t x = 0; x < img->width; ++x) {
-            img->image[y][x] = default_val;
+    // TODO: remove constants
+    img->image = (double *) malloc(sizeof(double) * (height + 4) * (width + 4));
+    for (size_t y = 0; y < img->height + 4; ++y) {
+        // img->image[y] = (double *) malloc(sizeof(double) * width);
+        for (size_t x = 0; x < img->width + 4; ++x) {
+            img->image[y * (width + 4) + x] = default_val;
         }
     }
     return img;
 }
+
+static Image *init_kernel(size_t width, size_t height, double default_val) {
+    Image *img = (Image *) malloc(sizeof(Image));
+    img->width = width;
+    img->height = height;
+    img->image = (double *) malloc(sizeof(double) * height * width);
+    for (size_t y = 0; y < img->height; ++y) {
+        for (size_t x = 0; x < img->width; ++x) {
+            img->image[y * width + x] = default_val;
+        }
+    }
+    return img;
+}
+
 
 static Image *copy_shape(Image *img) {
     if (img != NULL) {
@@ -343,31 +356,20 @@ static Image *copy_shape(Image *img) {
 }
 
 static Image *get_default_kernel(void) {
-    Image *img = init_image(5, 5, 0);
+    Image *img = init_kernel(5, 5, 0);
     for (int height = 0; height < img->height; ++height) {
         for (int width = 0; width < img->width; ++width) {
             if ((height + width) % 2 == 0) {
-                img->image[height][width] = 2;
+                ACCESS_KERNEL(img->image, width, height, 5) = 2;
             } else {
-                img->image[height][width] = -2;
+                ACCESS_KERNEL(img->image, width, height, 5) = -2;
             }
 
             if (height == 2 && width == 2) {
-                img->image[height][width] = -1;
+                ACCESS_KERNEL(img->image, width, height, 5) = -1;
             }
         }
     }
-    return img;
-}
-
-static Image *get_2d_laplace_kernel(void) {
-    Image *img = init_image(3, 3, 0);
-    img->image[1][1] = -4;
-    img->image[0][1] = 1;
-    img->image[2][1] = 1;
-    img->image[1][0] = 1;
-    img->image[1][2] = 1;
-
     return img;
 }
 
@@ -376,7 +378,9 @@ static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, I
 #pragma omp parallel for num_threads(args.number_of_processes)
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            buffer->image[imgHeight][imgWidth] = apply_default_kernel_to_point(img, kernel, imgWidth, imgHeight);
+            ACCESS_IMG(buffer->image, imgWidth, imgHeight, img->width + 4) = apply_default_kernel_to_point(img, kernel,
+                                                                                                           imgWidth,
+                                                                                                           imgHeight);
         }
     }
 }
@@ -384,36 +388,32 @@ static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, I
 static inline double
 apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
     return 0.0
-           + kernel->image[0][0] * smart_access(img, pointX - 2, pointY - 2)
-           + kernel->image[0][1] * smart_access(img, pointX - 1, pointY - 2)
-           + kernel->image[0][2] * smart_access(img, pointX, pointY - 2)
-           + kernel->image[0][3] * smart_access(img, pointX + 1, pointY - 2)
-           + kernel->image[0][4] * smart_access(img, pointX + 2, pointY - 2)
-           + kernel->image[1][0] * smart_access(img, pointX - 2, pointY - 1)
-           + kernel->image[1][1] * smart_access(img, pointX - 1, pointY - 1)
-           + kernel->image[1][2] * smart_access(img, pointX, pointY - 1)
-           + kernel->image[1][3] * smart_access(img, pointX + 1, pointY - 1)
-           + kernel->image[1][4] * smart_access(img, pointX + 2, pointY - 1)
-           + kernel->image[2][0] * smart_access(img, pointX - 2, pointY)
-           + kernel->image[2][1] * smart_access(img, pointX - 1, pointY)
-           + kernel->image[2][2] * smart_access(img, pointX, pointY)
-           + kernel->image[2][3] * smart_access(img, pointX + 1, pointY)
-           + kernel->image[2][4] * smart_access(img, pointX + 2, pointY)
-           + kernel->image[3][0] * smart_access(img, pointX - 2, pointY + 1)
-           + kernel->image[3][1] * smart_access(img, pointX - 1, pointY + 1)
-           + kernel->image[3][2] * smart_access(img, pointX, pointY + 1)
-           + kernel->image[3][3] * smart_access(img, pointX + 1, pointY + 1)
-           + kernel->image[3][4] * smart_access(img, pointX + 2, pointY + 1)
-           + kernel->image[4][0] * smart_access(img, pointX - 2, pointY + 2)
-           + kernel->image[4][1] * smart_access(img, pointX - 1, pointY + 2)
-           + kernel->image[4][2] * smart_access(img, pointX, pointY + 2)
-           + kernel->image[4][3] * smart_access(img, pointX + 1, pointY + 2)
-           + kernel->image[4][4] * smart_access(img, pointX + 2, pointY + 2);
+           + ACCESS_KERNEL(kernel->image, 0, 0, 5) * ACCESS_IMG(img->image, pointX - 2, pointY - 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 1, 0, 5) * ACCESS_IMG(img->image, pointX - 2, pointY - 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 2, 0, 5) * ACCESS_IMG(img->image, pointX - 2, pointY, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 3, 0, 5) * ACCESS_IMG(img->image, pointX - 2, pointY + 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 4, 0, 5) * ACCESS_IMG(img->image, pointX - 2, pointY + 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 0, 1, 5) * ACCESS_IMG(img->image, pointX - 1, pointY - 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 1, 1, 5) * ACCESS_IMG(img->image, pointX - 1, pointY - 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 2, 1, 5) * ACCESS_IMG(img->image, pointX - 1, pointY, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 3, 1, 5) * ACCESS_IMG(img->image, pointX - 1, pointY + 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 4, 1, 5) * ACCESS_IMG(img->image, pointX - 1, pointY + 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 0, 2, 5) * ACCESS_IMG(img->image, pointX, pointY - 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 1, 2, 5) * ACCESS_IMG(img->image, pointX, pointY - 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 2, 2, 5) * ACCESS_IMG(img->image, pointX, pointY, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 3, 2, 5) * ACCESS_IMG(img->image, pointX, pointY + 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 4, 2, 5) * ACCESS_IMG(img->image, pointX, pointY + 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 0, 3, 5) * ACCESS_IMG(img->image, pointX + 1, pointY - 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 1, 3, 5) * ACCESS_IMG(img->image, pointX + 1, pointY - 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 2, 3, 5) * ACCESS_IMG(img->image, pointX + 1, pointY, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 3, 3, 5) * ACCESS_IMG(img->image, pointX + 1, pointY + 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 4, 3, 5) * ACCESS_IMG(img->image, pointX + 1, pointY + 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 0, 4, 5) * ACCESS_IMG(img->image, pointX + 2, pointY - 2, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 1, 4, 5) * ACCESS_IMG(img->image, pointX + 2, pointY - 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 2, 4, 5) * ACCESS_IMG(img->image, pointX + 2, pointY, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 3, 4, 5) * ACCESS_IMG(img->image, pointX + 2, pointY + 1, img->width + 4)
+           + ACCESS_KERNEL(kernel->image, 4, 4, 5) * ACCESS_IMG(img->image, pointX + 2, pointY + 2, img->width + 4);
 
-}
-
-static inline double smart_access(Image *img, size_t x, size_t y) {
-    return img->image[clamp(0, y, img->height - 1)][clamp(0, x, img->width - 1)];
 }
 
 
@@ -424,8 +424,8 @@ static inline double apply_kernel_to_point(Image *restrict img, Image *restrict 
             size_t imageIndexY = clamp(0, pointY + y - kernel->height / 2, img->height - 1);
             size_t imageIndexX = clamp(0, pointX + x - kernel->width / 2, img->width - 1);
             val +=
-                    kernel->image[y][x]
-                    * img->image[imageIndexY][imageIndexX];
+                    kernel->image[y + x * (y + 1)]
+                    * img->image[imageIndexY + imageIndexX * (imageIndexY + 1)];
         }
     }
 
@@ -434,9 +434,9 @@ static inline double apply_kernel_to_point(Image *restrict img, Image *restrict 
 
 static double sum_all(Image *img) {
     double val = 0.0;
-    for (int imgHeight = 0; imgHeight < img->height; ++imgHeight) {
-        for (int imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            val += img->image[imgHeight][imgWidth];
+    for (int y = 0; y < img->height; ++y) {
+        for (int x = 0; x < img->width; ++x) {
+            val += ACCESS_IMG(img->image, x, y, img->width + 4);
         }
     }
     return val;
@@ -462,12 +462,28 @@ static void print_image(Image *img) {
     for (int height = 0; height < img->height; ++height) {
         for (int width = 0; width < img->width; ++width) {
             char *format = NULL;
-            if (img->image[height][width] < 0) {
+            if (ACCESS_IMG(img->image, width, height, img->width + 4) < 0) {
                 format = "%.02f\t";
             } else {
                 format = " %.02f\t";
             }
-            printf(format, img->image[height][width]);
+            printf(format, ACCESS_IMG(img->image, width, height, img->width + 4));
+        }
+        printf("\n");
+    }
+}
+
+
+static void print_kernel(Image *img) {
+    for (int height = 0; height < img->height; ++height) {
+        for (int width = 0; width < img->width; ++width) {
+            char *format = NULL;
+            if (ACCESS_KERNEL(img->image, width, height, img->width) < 0) {
+                format = "%.02f\t";
+            } else {
+                format = " %.02f\t";
+            }
+            printf(format, ACCESS_KERNEL(img->image, width, height, img->width));
         }
         printf("\n");
     }
@@ -492,7 +508,7 @@ static Image *read_image_from_fd(FILE *fd) {
                     token = strtok(buf, " ");
                     for (int x = 0; x < width; ++x) {
                         if (token != NULL) {
-                            img->image[y][x] = strtod(token, NULL);
+                            img->image[y + x * (y + 1)] = strtod(token, NULL);
                         } else {
                             bail_out("the file dimensions were not correct, less number of lines than given width");
                         }
