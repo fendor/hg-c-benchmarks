@@ -244,7 +244,7 @@ static void parse_args(int argc, char **argv) {
         }
     }
 
-    if (args.numberOfIterations < 0 || args.height <= 0 || args.width <= 0 || args.numberOfProcesses <= 0) {
+    if (args.height == 0 || args.width == 0 || args.numberOfProcesses == 0) {
         usage();
     }
 }
