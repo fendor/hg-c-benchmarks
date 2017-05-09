@@ -11,9 +11,15 @@
 
 #define MAX_SIZE 16384
 /* img pointer must be */
-#define ACCESS_IMG(img, x, y, width) (img[(y)*(width)+(x)])
+#define ACCESS_IMG_OFF(img, x, y, width) (img[(y)*(width)+(x)])
+#define ACCESS_IMG(img, x, y, width) (img[(2+(y))*(width)+(x)+2])
 
 
+#define HALF_KERNEL_WIDTH (2)
+#define HALF_KERNEL_HEIGHT (2)
+
+#define ADDITIONAL_WIDTH (HALF_KERNEL_WIDTH << 1)
+#define ADDITIONAL_HEIGHT (HALF_KERNEL_HEIGHT << 1)
 struct Image {
     size_t width;
     size_t height;
@@ -259,12 +265,6 @@ static void usage() {
 
 static void free_image(Image *image) {
     if (image != NULL) {
-        /*for (int height = 0; height < image->height; ++height) {
-            if (image->image[height] != NULL) {
-                free(image->image[height]);
-            }
-        }
-        // */
         if (image->image != NULL) {
             free(image->image);
         }
@@ -276,11 +276,10 @@ static Image *init_image(size_t width, size_t height, double default_val) {
     Image *img = (Image *) malloc(sizeof(Image));
     img->width = width;
     img->height = height;
-    // TODO: remove constants
-    img->image = (double *) malloc(sizeof(double) * (height + 4) * (width + 4));
-    for (size_t y = 0; y < img->height + 4; ++y) {
-        for (size_t x = 0; x < img->width + 4; ++x) {
-            img->image[y * (width + 4) + x] = default_val;
+    img->image = (double *) malloc(sizeof(double) * (height + ADDITIONAL_HEIGHT) * (width + ADDITIONAL_WIDTH));
+    for (size_t y = 0; y < img->height + ADDITIONAL_HEIGHT; ++y) {
+        for (size_t x = 0; x < img->width + ADDITIONAL_WIDTH; ++x) {
+            img->image[y * (width + ADDITIONAL_WIDTH) + x] = default_val;
         }
     }
     return img;
@@ -298,47 +297,47 @@ static Image *copy_shape(Image *img) {
 
 static void apply_kernel_to_image(Image *restrict img, Image *buffer) {
 #pragma omp parallel for num_threads(args.number_of_processes)
-    for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
-        for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            ACCESS_IMG(buffer->image, imgWidth, imgHeight, img->width + 4) =
-                    apply_default_kernel_to_point(img, imgWidth, imgHeight);
+    for (size_t y = 0; y < img->height; ++y) {
+        for (size_t x = 0; x < img->width; ++x) {
+            size_t width = img->width + ADDITIONAL_WIDTH;
+            ACCESS_IMG(img->image, x, y, width) = apply_default_kernel_to_point(img, x, y);
         }
     }
 }
 
 static inline double
 apply_default_kernel_to_point(Image *restrict img, size_t pointX, size_t pointY) {
-    size_t imgw = img->width + 4; //maybe does something ~0.5 seconds
+    size_t imgw = img->width + ADDITIONAL_WIDTH; //maybe does something ~0.5 seconds
     double *precomputedImageStart =
             img->image + (2 * imgw) + 2; //image start + two full lines + 2 offset, Does do ~2 seconds
 
     // compile kernel into application
     return 0.0 //variant ordered by same x
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 2, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 1, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY + 1, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY + 2, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY - 2, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY - 1, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY + 1, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY + 2, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX, pointY - 2, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX, pointY - 1, imgw)
-           +  -1 * ACCESS_IMG(precomputedImageStart, pointX, pointY, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX, pointY + 1, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX, pointY + 2, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY - 2, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY - 1, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY + 1, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY + 2, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY - 2, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY - 1, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY, imgw)
-           + -2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 1, imgw)
-           +  2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 2, imgw);
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 2, pointY - 2, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 2, pointY - 1, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 2, pointY, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 2, pointY + 1, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 2, pointY + 2, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 1, pointY - 2, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 1, pointY - 1, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 1, pointY, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 1, pointY + 1, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX - 1, pointY + 2, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX, pointY - 2, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX, pointY - 1, imgw)
+           + -1 * ACCESS_IMG_OFF(precomputedImageStart, pointX, pointY, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX, pointY + 1, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX, pointY + 2, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 1, pointY - 2, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 1, pointY - 1, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 1, pointY, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 1, pointY + 1, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 1, pointY + 2, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 2, pointY - 2, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 2, pointY - 1, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 2, pointY, imgw)
+           + -2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 2, pointY + 1, imgw)
+           + 2 * ACCESS_IMG_OFF(precomputedImageStart, pointX + 2, pointY + 2, imgw);
 }
 
 
@@ -346,7 +345,7 @@ static double sum_all(Image *img) {
     double val = 0.0;
     for (int y = 0; y < img->height; ++y) {
         for (int x = 0; x < img->width; ++x) {
-            val += ACCESS_IMG(img->image, x, y, img->width + 4);
+            val += ACCESS_IMG_OFF(img->image, x, y, img->width + ADDITIONAL_WIDTH);
         }
     }
     return val;
@@ -361,7 +360,7 @@ static void write_checksum_to(FILE *fd, double checksum) {
 }
 
 static void
-run_default(Image *restrict img,  Image *restrict buffer, size_t number_of_iterations) {
+run_default(Image *restrict img, Image *restrict buffer, size_t number_of_iterations) {
     for (size_t i = 0; i < number_of_iterations; i++) {
         apply_kernel_to_image(img, buffer);
         swap_ptr((void **) img, (void **) buffer);
@@ -372,12 +371,12 @@ static void print_image(Image *img) {
     for (int height = 0; height < img->height; ++height) {
         for (int width = 0; width < img->width; ++width) {
             char *format = NULL;
-            if (ACCESS_IMG(img->image, width, height, img->width + 4) < 0) {
+            if (ACCESS_IMG_OFF(img->image, width, height, img->width + ADDITIONAL_WIDTH) < 0) {
                 format = "%.02f\t";
             } else {
                 format = " %.02f\t";
             }
-            printf(format, ACCESS_IMG(img->image, width, height, img->width + 4));
+            printf(format, ACCESS_IMG_OFF(img->image, width, height, img->width + ADDITIONAL_WIDTH));
         }
         printf("\n");
     }
