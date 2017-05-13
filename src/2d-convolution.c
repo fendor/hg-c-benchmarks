@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
     // sanity check
     if (image != NULL && kernel != NULL && buffer != NULL) {
         // start benchmarking
-        FILE *res = fopen("../2d-convolution.times.res", "a+");
+        FILE *res = fopen("../2d-convolution.time.res", "a+");
         FILE *check = fopen("../2d-convolution.res", "w+");
         for (int i = 0; i < 10; ++i) {
             printf("Starting Kernel...\n");

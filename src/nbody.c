@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < args.size; i++) {
             fill_planet(&planets[i], i);
         }
-        FILE *res = fopen("../nbody.times.res", "a+");
+        FILE *res = fopen("../nbody.time.res", "a+");
         FILE *check = fopen("../nbody.res", "w+");
         for (int i = 0; i < 10; ++i) {
             printf("Starting Kernel...\n");
