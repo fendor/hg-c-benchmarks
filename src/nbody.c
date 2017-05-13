@@ -81,6 +81,8 @@ static void print_args(void);
  */
 static void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out);
 
+static void append_csv(FILE *fd, time_t seq_t);
+
 /**
  * Compute acceleration of one planet to all its neighbours.
  * Stores the result in the output buffer
@@ -135,17 +137,30 @@ int main(int argc, char **argv) {
         for (int i = 0; i < args.size; i++) {
             fill_planet(&planets[i], i);
         }
-        printf("Starting Kernel...\n");
-        TIC(0);
-        run(planets, buffer, args.size, args.iterations);
-        time_t seq_t = TOC(0);
-        printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
+        FILE *res = fopen("../nbody.times.res", "a+");
+        FILE *check = fopen("../nbody.res", "w+");
+        for (int i = 0; i < 10; ++i) {
+            printf("Starting Kernel...\n");
+            TIC(0);
+            run(planets, buffer, args.size, args.iterations);
+            time_t seq_t = TOC(0);
+            printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
 
-        FILE *fd = fopen("../nbody.res", "w+");
-        if (fd != NULL) {
-            pretty_print(fd, planets, args.size);
-        } else {
-            pretty_print(stderr, planets, args.size);
+            if (res != NULL) {
+                append_csv(res, seq_t);
+            }
+
+        }
+        if (check != NULL) {
+            pretty_print(check, planets, args.size);
+        }
+        if (res != NULL) {
+            fflush(res);
+            fclose(res);
+        }
+        if (check != NULL) {
+            fflush(check);
+            fclose(check);
         }
     } else {
         printf("Could not allocate with malloc!");
@@ -160,6 +175,10 @@ static void pretty_print(FILE *fd, Float3D *planets, size_t size) {
         fprintf(fd, "(%g, %g, %g)\n", p.x, p.y, p.z);
     }
     fflush(fd);
+}
+
+static void append_csv(FILE *fd, time_t seq_t) {
+    fprintf(fd, "%zu,%zu,%zu,%zu\n", args.numberOfProcesses, args.size, args.iterations, seq_t);
 }
 
 static void parse_args(int argc, char **argv) {

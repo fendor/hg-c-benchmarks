@@ -167,6 +167,8 @@ apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_
 
 static void bail_out(char *string);
 
+static void append_csv(FILE *fd, time_t time);
+
 int main(int argc, char **argv) {
     // argument parsing
     pgmname = argv[0]; // for error messages
@@ -197,19 +199,30 @@ int main(int argc, char **argv) {
     // sanity check
     if (image != NULL && kernel != NULL && buffer != NULL) {
         // start benchmarking
-        printf("Starting Kernel...\n");
-        TIC(0);
-        run_default(image, kernel, buffer, args.number_of_iterations);
-        time_t seq_t = TOC(0);
+        FILE *res = fopen("../2d-convolution.times.res", "a+");
+        FILE *check = fopen("../2d-convolution.res", "w+");
+        for (int i = 0; i < 10; ++i) {
+            printf("Starting Kernel...\n");
+            TIC(0);
+            run_default(image, kernel, buffer, args.number_of_iterations);
+            time_t seq_t = TOC(0);
 
-        // print kernel time
-        printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
-
-        // print to file
-        FILE *fd = fopen("../2d-convolution.res", "w+");
-        write_checksum_to(fd, sum_all(image));
-        if (fd != NULL) {
-            fclose(fd);
+            // print kernel time
+            printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
+            if (res != NULL) {
+                append_csv(res, seq_t);
+            }
+        }
+        if (check != NULL) {
+            write_checksum_to(check, sum_all(image));
+        }
+        if (res != NULL) {
+            fflush(res);
+            fclose(res);
+        }
+        if (check != NULL) {
+            fflush(check);
+            fclose(check);
         }
     } else {
         // free resources
@@ -223,6 +236,11 @@ int main(int argc, char **argv) {
     free_image(kernel);
     free_image(buffer);
     return 0;
+}
+
+static void append_csv(FILE *fd, time_t time) {
+    fprintf(fd, "%zu,%zu,%zu,%zu,%zu\n", args.number_of_processes, args.height, args.width, args.number_of_iterations,
+            time);
 }
 
 static void print_args() {
