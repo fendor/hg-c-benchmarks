@@ -35,4 +35,6 @@
 build/
 .idea/
 *.res
+*.bak
 !.gitignore
+*~

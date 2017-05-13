@@ -133,13 +133,12 @@ int main(int argc, char **argv) {
     Float3D *buffer = (Float3D *) malloc(sizeof(Float3D) * args.size);
 
     if (planets != NULL && buffer != NULL) {
-
-        for (int i = 0; i < args.size; i++) {
-            fill_planet(&planets[i], i);
-        }
         FILE *res = fopen("../nbody.time.res", "a+");
         FILE *check = fopen("../nbody.res", "w+");
-        for (int i = 0; i < 10; ++i) {
+        for (int n = 0; n < 10; ++n) {
+            for (int i = 0; i < args.size; i++) {
+                fill_planet(&planets[i], i);
+            }
             printf("Starting Kernel...\n");
             TIC(0);
             run(planets, buffer, args.size, args.iterations);
