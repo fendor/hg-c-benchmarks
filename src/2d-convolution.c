@@ -198,14 +198,17 @@ int main(int argc, char **argv) {
     }
     // sanity check
     if (image != NULL && kernel != NULL && buffer != NULL) {
+        // TODO: backup original image
         // start benchmarking
         FILE *res = fopen("../2d-convolution.time.res", "a+");
         FILE *check = fopen("../2d-convolution.res", "w+");
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 1; ++i) {
+            // TODO: load back up image
             printf("Starting Kernel...\n");
+            // start the clock
             TIC(0);
             run_default(image, kernel, buffer, args.number_of_iterations);
-            time_t seq_t = TOC(0);
+            time_t seq_t = TOC(0); // stop the clock
 
             // print kernel time
             printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
@@ -215,14 +218,12 @@ int main(int argc, char **argv) {
         }
         if (check != NULL) {
             write_checksum_to(check, sum_all(image));
+            fflush(check);
+            fclose(check);
         }
         if (res != NULL) {
             fflush(res);
             fclose(res);
-        }
-        if (check != NULL) {
-            fflush(check);
-            fclose(check);
         }
     } else {
         // free resources
@@ -378,18 +379,6 @@ static Image *get_default_kernel(void) {
     return img;
 }
 
-static Image *get_2d_laplace_kernel(void) {
-    Image *img = init_image(3, 3, 0);
-    img->image[1][1] = -4;
-    img->image[0][1] = 1;
-    img->image[2][1] = 1;
-    img->image[1][0] = 1;
-    img->image[1][2] = 1;
-
-    return img;
-}
-
-
 static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Image *buffer) {
 #pragma omp parallel for num_threads(args.number_of_processes)
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
@@ -451,10 +440,11 @@ static inline double apply_kernel_to_point(Image *restrict img, Image *restrict 
 }
 
 static double sum_all(Image *img) {
+    printf("Extent: %zu, %zu\n", img->height, img->width);
     double val = 0.0;
-    for (int imgHeight = 0; imgHeight < img->height; ++imgHeight) {
-        for (int imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            val += img->image[imgHeight][imgWidth];
+    for (int y = 0; y < img->height; ++y) {
+        for (int x = 0; x < img->width; ++x) {
+            val += img->image[y][x];
         }
     }
     return val;
@@ -472,20 +462,23 @@ static void
 run_default(Image *restrict img, Image *restrict kernel, Image *restrict buffer, size_t number_of_iterations) {
     for (size_t i = 0; i < number_of_iterations; i++) {
         apply_kernel_to_image(img, kernel, buffer);
-        swap_ptr((void **) img, (void **) buffer);
+        swap_ptr(&img, &buffer);
+        if (args.debug) {
+            fprintf(stdout, "Image sum: %f\n", sum_all(img));
+        }
     }
 }
 
 static void print_image(Image *img) {
-    for (int height = 0; height < img->height; ++height) {
-        for (int width = 0; width < img->width; ++width) {
+    for (int y = 0; y < img->height; ++y) {
+        for (int x = 0; x < img->width; ++x) {
             char *format = NULL;
-            if (img->image[height][width] < 0) {
-                format = "%.02f\t";
+            if (img->image[y][x] < 0) {
+                format = "%.03f\t";
             } else {
-                format = " %.02f\t";
+                format = " %.03f\t";
             }
-            printf(format, img->image[height][width]);
+            printf(format, img->image[y][x]);
         }
         printf("\n");
     }
@@ -499,7 +492,7 @@ static Image *read_image_from_fd(FILE *fd) {
             token = strtok(buf, " ");
             if (NULL == token) bail_out("height couldn't be read from file");
             size_t height = (size_t) strtol(token, NULL, 10);
-            token = strtok(buf, " ");
+            token = strtok(NULL, " ");
             if (NULL == token) bail_out("width couldn't be read from file");
             size_t width = (size_t) strtol(token, NULL, 10);
 
