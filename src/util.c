@@ -14,7 +14,7 @@ time_t mytime(void) {
     return (now.tv_usec + now.tv_sec * 1000000);
 }
 
-size_t clamp(size_t lower, size_t val, size_t higher) {
+int clamp(int lower, int val, int higher) {
     return val < lower ? lower : higher < val ? higher : val;
 }
 

@@ -150,14 +150,12 @@ int main(int argc, char **argv) {
             }
 
         }
-        if (check != NULL) {
-            pretty_print(check, planets, args.size);
-        }
         if (res != NULL) {
             fflush(res);
             fclose(res);
         }
         if (check != NULL) {
+            pretty_print(check, planets, args.size);
             fflush(check);
             fclose(check);
         }
@@ -218,8 +216,8 @@ static void parse_args(int argc, char **argv) {
 }
 
 static void print_args(void) {
-    printf("Args -> number of Planets: %zu, iterations: %zu, processes: %zu\n", args.size,
-           args.iterations, args.numberOfProcesses
+    printf("Args -> number of Planets: %zu, iterations: %zu, processes: %zu\n", args.size, args.iterations,
+           args.numberOfProcesses
     );
 }
 

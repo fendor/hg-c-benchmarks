@@ -24,7 +24,7 @@ time_t time_for_tic[TIC_TOC_COUNT];
  * @param upper  higher bound
  * @return Clamped value
  */
-size_t clamp(size_t lower, size_t value, size_t upper);
+int clamp(int lower, int value, int upper);
 
 /**
  * Swap two pointers
