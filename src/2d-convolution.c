@@ -17,7 +17,7 @@
  * @param args Arguments to the program, number of iterations and used processes are used for computation
  */
 static void
-run_default(Image **restrict img, Image *restrict kernel, Args *args, Image **restrict buffer);
+run_default(Image **restrict img, const Image *restrict kernel, const Args *args, Image **restrict buffer);
 
 /**
  * Runs the default benchmark, comparable to the benchmarks in the haskell paper
@@ -28,7 +28,7 @@ run_default(Image **restrict img, Image *restrict kernel, Args *args, Image **re
  * @param args Arguments to the program, number of iterations and used processes are used for computation
  */
 static void
-run(Image **restrict img, Image *restrict kernel, Args *args, Image **restrict buffer);
+run(Image **restrict img, const Image *restrict kernel, const Args *args, Image **restrict buffer);
 
 
 /**
@@ -41,7 +41,7 @@ run(Image **restrict img, Image *restrict kernel, Args *args, Image **restrict b
  * @param args Arguments to the program, number of iterations and used processes are used for computation
  * @param buffer Output buffer
  */
-static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Args *args, Image *buffer);
+static void apply_kernel_to_image(Image *restrict img, const Image *restrict kernel, const Args *args, Image *buffer);
 
 /**
  * Apply a given kernel of the size 5x5 on every pixel of an image.
@@ -53,7 +53,8 @@ static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, A
  * @param args Arguments to the program, number of iterations and used processes are used for computation
  * @param buffer Output buffer
  */
-static void apply_default_kernel_to_image(Image *restrict img, Image *restrict kernel, Args *args, Image *buffer);
+static void
+apply_default_kernel_to_image(Image *restrict img, const Image *restrict kernel, const Args *args, Image *buffer);
 
 /**
  * Apply a given kernel on a pixel of an image.
@@ -65,7 +66,7 @@ static void apply_default_kernel_to_image(Image *restrict img, Image *restrict k
  * @param pointY y value of the image that is being investigated
  * @return Computed kernel value for the coordinate (pointX, pointY)
  */
-static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, int pointX, int pointY);
+static double apply_kernel_to_point(Image *restrict img, const Image *restrict kernel, int pointX, int pointY);
 
 /**
  * Apply a given kernel on a pixel of an image.
@@ -78,7 +79,7 @@ static double apply_kernel_to_point(Image *restrict img, Image *restrict kernel,
  * @return Computed kernel value for the coordinate (pointX, pointY)
  */
 static inline double
-apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, int pointX, int pointY);
+apply_default_kernel_to_point(Image *restrict img, const Image *restrict kernel, int pointX, int pointY);
 
 /**
  * Create image based on the arguments
@@ -104,13 +105,23 @@ static Image *create_kernel(Args *args);
  */
 static void free_resources(Image *image, Image *kernel, Image *buffer, Image *backup, Args *args);
 
-time_t benchmark(const Image *kernel, Image **image, const Args *args, Image **buffer);
+/**
+ * Benchmark how long it takes to apply the kernel to an given image.
+ *
+ * @param image Image to apply the kernel to
+ * @param kernel Kernel to apply to the image
+ * @param args Arguments like iterations, number of used processors
+ * @param buffer Buffer to write the output to, must have same extent as the image
+ * @return time it took to apply the kernel
+ */
+static time_t benchmark(Image **image, const Image *kernel, const Args *args, Image **buffer);
 
 /**
+ * Entry point of the program
  *
- * @param argc
- * @param argv
- * @return
+ * @param argc Number of arguments
+ * @param argv String array of arguments
+ * @return non - zero exit code indicates error.
  */
 int main(int argc, char **argv) {
     // argument parsing
@@ -130,39 +141,38 @@ int main(int argc, char **argv) {
         // open benchmark files
         FILE *res = fopen("../2d-convolution.time.res", "a+");
         FILE *check = fopen("../2d-convolution.res", "w+");
+        if (res == NULL || check == NULL) {
+            bail_out("Could not open benchmark output files");
+        }
         // start benchmarking
-        for (int i = 0; i < 1; ++i) {
-            if (copy_image(backup, backup) < 0) {
+        for (int i = 0; i < 10; ++i) {
+            if (copy_image(backup, image) < 0) {
                 bail_out("Could not restore image, something must have been changed");
             }
-            time_t seq_t = benchmark(kernel, &image, args, &buffer);
-            if (res != NULL) {
-                append_csv(res, image, args, seq_t);
-            }
-        }
-        if (check != NULL) {
+            time_t seq_t = benchmark(&image, kernel, args, &buffer);
+
+            append_csv(res, image, args, seq_t);
             write_checksum_to(check, sum_all(image));
-            fflush(check);
-            fclose(check);
         }
-        if (res != NULL) {
-            fflush(res);
-            fclose(res);
-        }
+        fflush(check);
+        fflush(res);
+        fclose(check);
+        fclose(res);
+
     } else {
         // free resources
         if (args->debug) {
             fprintf(stderr, "Memory could not be allocated\n");
         }
         free_resources(image, kernel, buffer, backup, args);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     // free resources
     free_resources(image, kernel, buffer, backup, args);
     return 0;
 }
 
-time_t benchmark(const Image *kernel, Image **image, const Args *args, Image **buffer) {
+time_t benchmark(Image **image, const Image *kernel, const Args *args, Image **buffer) {
     time_t seq_t;
     printf("Starting Kernel...\n");
     // start the clock
@@ -210,7 +220,8 @@ static Image *create_image(Args *args) {
     return image;
 }
 
-static void apply_default_kernel_to_image(Image *restrict img, Image *restrict kernel, Args *args, Image *buffer) {
+static void
+apply_default_kernel_to_image(Image *restrict img, const Image *restrict kernel, const Args *args, Image *buffer) {
 #pragma omp parallel for num_threads(args->number_of_processes)
     for (int y = 0; y < img->height; ++y) {
         for (int x = 0; x < img->width; ++x) {
@@ -219,7 +230,7 @@ static void apply_default_kernel_to_image(Image *restrict img, Image *restrict k
     }
 }
 
-static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, Args *args, Image *buffer) {
+static void apply_kernel_to_image(Image *restrict img, const Image *restrict kernel, const Args *args, Image *buffer) {
 #pragma omp parallel for num_threads(args->number_of_processes)
     for (int y = 0; y < img->height; ++y) {
         for (int x = 0; x < img->width; ++x) {
@@ -228,8 +239,27 @@ static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, A
     }
 }
 
+static void
+run_default(Image **restrict img, const Image *restrict kernel, const Args *args, Image **restrict buffer) {
+    for (int i = 0; i < args->number_of_iterations; i++) {
+        apply_default_kernel_to_image(*img, kernel, args, *buffer);
+
+        swap_ptr((void **) img, (void **) buffer);
+    }
+}
+
+static void
+run(Image **restrict img, const Image *restrict kernel, const Args *args, Image **restrict buffer) {
+    for (int i = 0; i < args->number_of_iterations; i++) {
+        apply_kernel_to_image(*img, kernel, args, *buffer);
+
+        swap_ptr((void **) img, (void **) buffer);
+    }
+}
+
+
 static inline double
-apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, int pointX, int pointY) {
+apply_default_kernel_to_point(Image *restrict img, const Image *restrict kernel, int pointX, int pointY) {
     return 0.0
            + kernel->image[0][0] * smart_access(img, pointX - 2, pointY - 2)
            + kernel->image[0][1] * smart_access(img, pointX - 1, pointY - 2)
@@ -260,7 +290,7 @@ apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, int p
 }
 
 
-static inline double apply_kernel_to_point(Image *restrict img, Image *restrict kernel, int pointX, int pointY) {
+static inline double apply_kernel_to_point(Image *restrict img, const Image *restrict kernel, int pointX, int pointY) {
     double val = 0.0;
     for (int y = 0; y < kernel->height; ++y) {
         for (int x = 0; x < kernel->width; ++x) {
@@ -273,22 +303,4 @@ static inline double apply_kernel_to_point(Image *restrict img, Image *restrict 
     }
 
     return val;
-}
-
-static void
-run_default(Image **restrict img, Image *restrict kernel, Args *args, Image **restrict buffer) {
-    for (int i = 0; i < args->number_of_iterations; i++) {
-        apply_default_kernel_to_image(*img, kernel, args, *buffer);
-
-        swap_ptr((void **) img, (void **) buffer);
-    }
-}
-
-static void
-run(Image **restrict img, Image *restrict kernel, Args *args, Image **restrict buffer) {
-    for (int i = 0; i < args->number_of_iterations; i++) {
-        apply_kernel_to_image(*img, kernel, args, *buffer);
-
-        swap_ptr((void **) img, (void **) buffer);
-    }
 }
