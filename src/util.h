@@ -28,9 +28,10 @@ int clamp(int lower, int value, int upper);
 
 /**
  * Swap two pointers
- * @param ptr First pointer to swap
- * @param other Second pointer to swap
+ * @param a First pointer to swap
+ * @param b Second pointer to swap
+ * @param t type of the pointers to swap
  */
-void swap_ptr(void **ptr, void **other);
+#define swap_ptr(a, b, t) do { t *tmp = *a; *a = *b; *b = tmp; } while(0);
 
 #endif //HG_C_BENCHMARKS_UTIL_H

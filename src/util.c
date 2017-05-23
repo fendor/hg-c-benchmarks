@@ -17,9 +17,3 @@ time_t mytime(void) {
 int clamp(int lower, int val, int higher) {
     return val < lower ? lower : higher < val ? higher : val;
 }
-
-void swap_ptr(void **ptr, void **other) {
-    void *tmp = *ptr;
-    *ptr = *other;
-    *other = tmp;
-}

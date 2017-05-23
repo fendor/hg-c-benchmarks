@@ -244,7 +244,7 @@ run_default(Image **restrict img, const Image *restrict kernel, const Args *args
     for (int i = 0; i < args->number_of_iterations; i++) {
         apply_default_kernel_to_image(*img, kernel, args, *buffer);
 
-        swap_ptr((void **) img, (void **) buffer);
+        swap_ptr(img, buffer, Image*);
     }
 }
 
@@ -253,7 +253,7 @@ run(Image **restrict img, const Image *restrict kernel, const Args *args, Image 
     for (int i = 0; i < args->number_of_iterations; i++) {
         apply_kernel_to_image(*img, kernel, args, *buffer);
 
-        swap_ptr((void **) img, (void **) buffer);
+        swap_ptr(img, buffer, Image*);
     }
 }
 
