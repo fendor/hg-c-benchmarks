@@ -225,7 +225,7 @@ apply_default_kernel_to_image(Image *restrict img, const Image *restrict kernel,
 #pragma omp parallel for num_threads(args->number_of_processes)
     for (int y = 0; y < img->height; ++y) {
         for (int x = 0; x < img->width; ++x) {
-            buffer->image[y][x] = apply_kernel_to_point(img, kernel, x, y);
+            buffer->image[y][x] = apply_default_kernel_to_point(img, kernel, x, y);
         }
     }
 }
@@ -234,7 +234,7 @@ static void apply_kernel_to_image(Image *restrict img, const Image *restrict ker
 #pragma omp parallel for num_threads(args->number_of_processes)
     for (int y = 0; y < img->height; ++y) {
         for (int x = 0; x < img->width; ++x) {
-            buffer->image[y][x] = apply_default_kernel_to_point(img, kernel, x, y);
+            buffer->image[y][x] = apply_kernel_to_point(img, kernel, x, y);
         }
     }
 }

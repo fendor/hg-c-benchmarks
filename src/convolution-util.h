@@ -47,7 +47,7 @@ typedef struct Image Image;
  * Name of the Program.
  * Must be set in the main before calling any other function.
  */
-static char *pgmname;
+char *pgmname;
 
 /**
  * Helper function to print the image in an easy way to read

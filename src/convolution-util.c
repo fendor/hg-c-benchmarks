@@ -228,7 +228,7 @@ Args *parse_args(int argc, char **argv) {
         usage();
     }
 
-    if (args->height <= 0 || args->width <= 0 || args->number_of_processes <= 0) {
+    if (args->height <= 0 || args->width <= 0 || args->number_of_processes <= 0 || args->number_of_iterations < 0) {
         usage();
     }
     // sanity was verified
