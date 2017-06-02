@@ -70,6 +70,9 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict img, const Image *restri
 static void run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
                                 ImageWithPadding **buffer);
 
+/**
+ * Free all the resources
+ */
 void free_resources(Args *args, Image *kernel, ImageWithPadding *padded_img,
                     ImageWithPadding *padded_buffer, ImageWithPadding *backup);
 

@@ -248,7 +248,8 @@ double smart_access(Image *img, int x, int y) {
 
 
 void append_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time) {
-    fprintf(fd, "%d,%d,%d,%d,%zu\n", args->number_of_processes, img->inner_height, img->inner_width, args->number_of_iterations,
+    fprintf(fd, "%d,%d,%d,%d,%zu\n", args->number_of_processes, img->inner_height, img->inner_width,
+            args->number_of_iterations,
             time);
 }
 
@@ -267,6 +268,12 @@ ImageWithPadding *add_padding(Image *img, int padding) {
         }
     }
     update_borders(padded_img);
+    // unique hack
+    for (int y = 0; y < padded_img->padding; ++y) {
+        padded_img->image[y] = padded_img->image[padded_img->padding];
+        padded_img->image[padded_img->inner_height + padded_img->padding + y] =
+                padded_img->image[padded_img->inner_height + padded_img->padding - 1];
+    }
     return padded_img;
 }
 
@@ -286,8 +293,8 @@ void update_borders(ImageWithPadding *padded_img) {
     int width = padded_img->width;
     // TODO: all three loops can be merged into one: would this be reasonable?
     // left and right bounds
-    for (int x = 0; x < padded_img->padding; ++x) {
-        for (int y = 0; y < padded_img->inner_height; ++y) {
+    for (int y = 0; y < padded_img->inner_height; ++y) {
+        for (int x = 0; x < padded_img->padding; ++x) {
             int offset_y = y + padded_img->padding;
             ACCESS_FIELD(padded_img, x, offset_y) =
                     ACCESS_IMAGE(padded_img, 0, y);
@@ -296,6 +303,7 @@ void update_borders(ImageWithPadding *padded_img) {
                     ACCESS_IMAGE(padded_img, padded_img->inner_width - 1, y);
         }
     }
+    /*
     // upper and lower bounds
     for (int y = 0; y < padded_img->padding; ++y) {
         for (int x = 0; x < padded_img->inner_width; ++x) {
@@ -324,6 +332,7 @@ void update_borders(ImageWithPadding *padded_img) {
             ACCESS_FIELD(padded_img, max_x, max_y) = bottom_right_corner;
         }
     }
+     */
 }
 
 void print_padded_image(ImageWithPadding *padded_img) {
@@ -343,8 +352,8 @@ void print_padded_image(ImageWithPadding *padded_img) {
 
 void free_padded_image(ImageWithPadding *padded_img) {
     if (padded_img != NULL) {
-        int height = padded_img->height;
-        for (int y = 0; y < height; ++y) {
+        int height = padded_img->inner_height;
+        for (int y = padded_img->padding; y < height; ++y) {
             if (padded_img->image[y] != NULL) {
                 free(padded_img->image[y]);
             }
