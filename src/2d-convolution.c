@@ -188,8 +188,9 @@ static Image *create_image(Args *args) {
     return image;
 }
 
-static void run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
-                                ImageWithPadding **buffer) {
+static void __attribute__((noinline))
+run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
+                    ImageWithPadding **buffer) {
     for (int i = 0; i < args->number_of_iterations; i++) {
         apply_kernel_to_padded_image(*padded_img, kernel, args, *buffer);
         update_borders(*buffer);
@@ -198,7 +199,7 @@ static void run_on_padded_image(ImageWithPadding **padded_img, const Image *rest
 }
 
 
-static void
+static void __attribute__((noinline))
 apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image *restrict kernel, const Args *args,
                              ImageWithPadding *buffer) {
 #pragma omp parallel for num_threads(args->number_of_processes)
@@ -209,17 +210,19 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image 
     }
 }
 
-static double
+static double __attribute__((noinline))
 apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *restrict kernel, int pointX, int pointY) {
     double val = 0.0;
-    for (int y = 0; y < kernel->height; ++y) {
-        for (int x = 0; x < kernel->width; ++x) {
 
-            int newX = pointX - padded_img->padding + x;
-            int newY = pointY - padded_img->padding + y;
-            val += kernel->image[y][x] *
-                   ACCESS_IMAGE(padded_img, newX, newY);
+
+    int newY = pointY - padded_img->padding;
+    for (int y = 0; y < kernel->height; ++y) {
+        int newX = pointX - padded_img->padding;
+        for (int x = 0; x < kernel->width; ++x) {
+            val += kernel->image[y][x] * ACCESS_IMAGE(padded_img, newX, newY);
+            ++newX;
         }
+        ++newY;
     }
     return val;
 }
