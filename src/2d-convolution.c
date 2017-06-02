@@ -156,7 +156,7 @@ static void print_args();
 
 
 static inline double
-apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY);
+apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY, Image* buf);
 
 static void bail_out(char *string);
 
@@ -378,19 +378,54 @@ static void apply_kernel_to_image(Image *restrict img, Image *restrict kernel, I
 #pragma omp parallel for num_threads(args.number_of_processes)
     for (size_t imgHeight = 0; imgHeight < img->height; ++imgHeight) {
         for (size_t imgWidth = 0; imgWidth < img->width; ++imgWidth) {
-            ACCESS_IMG(buffer->image, imgWidth, imgHeight, img->width + 4) = apply_default_kernel_to_point(img, kernel,
-                                                                                                           imgWidth,
-                                                                                                           imgHeight);
+           //apply_default_kernel_to_point(img, kernel, imgWidth, imgHeight, buffer);
+               size_t imgw = img->width + 4; 
+    double *z = img->image + (imgHeight + 0) * imgw + imgWidth;
+    double d = 0.0
+	   + 2 * *(z + 0)
+	   - 2 * *(z + 1)
+	   + 2 * *(z + 2)
+	   - 2 * *(z + 3)
+	   + 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         - 2 * *(z + 0)
+         + 2 * *(z + 1)
+         - 2 * *(z + 2)
+         + 2 * *(z + 3)
+         - 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         + 2 * *(z + 0)
+         - 2 * *(z + 1)
+         - 1 * *(z + 2)
+         - 2 * *(z + 3)
+         + 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         - 2 * *(z + 0)
+         + 2 * *(z + 1)
+         - 2 * *(z + 2)
+         + 2 * *(z + 3)
+         - 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         + 2 * *(z + 0)
+         - 2 * *(z + 1)
+         + 2 * *(z + 2)
+         - 2 * *(z + 3)
+         + 2 * *(z + 4);
+    *(buffer->image+(2+imgHeight)*imgw+2+imgWidth)=d;
         }
     }
 }
 
 static inline double
-apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY) {
+apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_t pointX, size_t pointY, Image* buffer) {
     size_t imgw = img->width + 4; //maybe does something ~0.5 seconds
     double *precomputedImageStart =
             img->image + (2 * imgw) + 2; //image start + two full lines + 2 offset, Does do ~2 seconds
-    
+/*    
     return 0.0 //variant ordered by same x
            + ACCESS_KERNEL(kernel->image, 0, 0, 5) * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 2, imgw)
            + ACCESS_KERNEL(kernel->image, 1, 0, 5) * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 1, imgw)
@@ -417,7 +452,7 @@ apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_
            + ACCESS_KERNEL(kernel->image, 2, 4, 5) * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY, imgw)
            + ACCESS_KERNEL(kernel->image, 3, 4, 5) * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 1, imgw)
            + ACCESS_KERNEL(kernel->image, 4, 4, 5) * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 2, imgw);
-
+//*/
 /*
     return 0.0 //Variant ordered by increasing x
            + ACCESS_KERNEL(kernel->image, 0, 0, 5) * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 2, imgw)
@@ -449,7 +484,7 @@ apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_
            + ACCESS_KERNEL(kernel->image, 4, 2, 5) * ACCESS_IMG(precomputedImageStart, pointX, pointY + 2, imgw)
            + ACCESS_KERNEL(kernel->image, 4, 3, 5) * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY + 2, imgw)
            + ACCESS_KERNEL(kernel->image, 4, 4, 5) * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 2, imgw);
-*/
+//*/
 /*
     double *z = img->image + (pointY + 0) * imgw + pointX;
     double d = 0.0 //Variant ordered by increasing x
@@ -487,7 +522,78 @@ apply_default_kernel_to_point(Image *restrict img, Image *restrict kernel, size_
          + *(kernel->image + 23) * *(z + 3)
          + *(kernel->image + 24) * *(z + 4);
     return d;
-    */
+    //*/
+/*    
+	return 0.0 //Variant ordered by increasing x
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 2, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY - 2, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX, pointY - 2, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY - 2, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY - 2, imgw)
+
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY - 1, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY - 1, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX, pointY - 1, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY - 1, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY - 1, imgw)
+
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY, imgw)
+           - 1 * ACCESS_IMG(precomputedImageStart, pointX, pointY, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY, imgw)
+
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY + 1, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY + 1, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX, pointY + 1, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY + 1, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 1, imgw)
+
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX - 2, pointY + 2, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX - 1, pointY + 2, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX, pointY + 2, imgw)
+           - 2 * ACCESS_IMG(precomputedImageStart, pointX + 1, pointY + 2, imgw)
+           + 2 * ACCESS_IMG(precomputedImageStart, pointX + 2, pointY + 2, imgw);
+//*/
+//*
+    double *z = img->image + (pointY + 0) * imgw + pointX;
+    double d = 0.0 //Variant ordered by increasing x
+	   + 2 * *(z + 0)
+	   - 2 * *(z + 1)
+	   + 2 * *(z + 2)
+	   - 2 * *(z + 3)
+	   + 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         - 2 * *(z + 0)
+         + 2 * *(z + 1)
+         - 2 * *(z + 2)
+         + 2 * *(z + 3)
+         - 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         + 2 * *(z + 0)
+         - 2 * *(z + 1)
+         - 1 * *(z + 2)
+         - 2 * *(z + 3)
+         + 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         - 2 * *(z + 0)
+         + 2 * *(z + 1)
+         - 2 * *(z + 2)
+         + 2 * *(z + 3)
+         - 2 * *(z + 4);
+    z += imgw;
+    d += 0.0
+         + 2 * *(z + 0)
+         - 2 * *(z + 1)
+         + 2 * *(z + 2)
+         - 2 * *(z + 3)
+         + 2 * *(z + 4);
+    //return d;
+    *(buffer->image+(2+pointY)*imgw+2+pointX)=d;
+    //*/
 }
 
 
