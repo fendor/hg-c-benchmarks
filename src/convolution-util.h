@@ -13,6 +13,9 @@
 #include <getopt.h>
 #include "util.h"
 
+#define ACCESS_IMAGE(img, x, y) (img->image[(y) + (img->padding)][(x) + (img->padding)])
+#define ACCESS_FIELD(img, x, y) (img->image[y][x])
+
 struct arguments {
     bool debug;
     bool opt_image_from_file;
@@ -33,6 +36,14 @@ struct Image {
     double **image;
 };
 
+struct ImageWithPadding {
+    int padding;
+    int width;
+    int height;
+    int inner_width;
+    int inner_height;
+    double **image;
+};
 /**
  * Typedef of the arguments struct
  */
@@ -42,6 +53,11 @@ typedef struct arguments Args;
  * Typedef for easier usage
  */
 typedef struct Image Image;
+
+/**
+ * Typedef for easier usage of the padded image
+ */
+typedef struct ImageWithPadding ImageWithPadding;
 
 /**
  * Name of the Program.
@@ -113,7 +129,7 @@ void bail_out(char *string);
  * @param args Arguments for number of processes and how many times the benchmarks has been iterated
  * @param time Time it took to execute the benchmark
  */
-void append_csv(FILE *fd, Image *img, Args *args, time_t time);
+void append_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time);
 
 /**
  * Sum all pixels of the given image
@@ -191,5 +207,61 @@ double smart_access(Image *img, int x, int y);
  */
 void free_args(Args *args);
 
+/**
+ * Add padding to an image.
+ * This function is required if one wants to use a high performance approach to the 2d-convolution problem
+ * @param img Image to apply the padding
+ * @param padding Size of the padding for the new padded image
+ * @return New padded image, must be freed with free_padded_image(...) after usage
+ */
+ImageWithPadding *add_padding(Image *img, int padding);
+
+/**
+ * Remove the padding of an image and return just the image data.
+ * it should hold: remove_padding(add_padding(img,2)) == img
+ * where (==) is the equality operator for all values
+ * @param img Padded image to remove the paddings from
+ * @return New image that only contains image data.
+ */
+Image *remove_padding(ImageWithPadding *img);
+
+/**
+ * Update the out of bounds padding of the image to match their actual borders.
+ * This function is helpful, if you apply kernels more than once
+ * @param padded_img Image to update the borders of
+ */
+void update_borders(ImageWithPadding *padded_img);
+
+/**
+ * Helper function to print an image in an human readable way
+ * @param padded_img Image to print
+ */
+void print_padded_image(ImageWithPadding *padded_img);
+
+/**
+ * Free the resources allocated by this image
+ * @param padded_img Padded image to free
+ */
+void free_padded_image(ImageWithPadding *padded_img);
+
+/**
+ * Copy the padded image from a to b
+ * This function returns zero on success, -1 if one of the parameters is NULL and -2 if the extents do not match
+ * @param padded_from Source image
+ * @param padded_to Target image
+ * @return zero on success, non-zero on failure
+ */
+int copy_padded_image(ImageWithPadding *padded_from, ImageWithPadding *padded_to);
+
+/**
+ * Initializes a new image with a padded border. All values are initialized to 0
+ * Only function with @href free_padded_image that knows about the internal representation
+ *
+ * @param inner_width Width of the actual image
+ * @param inner_height Height of the actual image
+ * @param padding Size of the padding that should be added to the image
+ * @return Image with a padded border. This can improve the performance of the 2d-convolution problem
+ */
+ImageWithPadding *init_padded_image(int inner_width, int inner_height, int padding);
 
 #endif //HG_C_BENCHMARKS_CONVOLUTION_UTIL_H
