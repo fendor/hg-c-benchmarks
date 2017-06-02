@@ -32,6 +32,6 @@ int clamp(int lower, int value, int upper);
  * @param b Second pointer to swap
  * @param t type of the pointers to swap
  */
-#define swap_ptr(a, b, t) do { t *tmp = *a; *a = *b; *b = tmp; } while(0);
+#define swap_ptr(a, b, t) do { t tmp = *a; *a = *b; *b = tmp; } while(0);
 
 #endif //HG_C_BENCHMARKS_UTIL_H
