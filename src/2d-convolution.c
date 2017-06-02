@@ -70,6 +70,9 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict img, const Image *restri
 static void run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
                                 ImageWithPadding **buffer);
 
+void free_resources(Args *args, Image *kernel, ImageWithPadding *padded_img,
+                    ImageWithPadding *padded_buffer, ImageWithPadding *backup);
+
 /**
  * Entry point of the program
  *
@@ -105,6 +108,7 @@ int main(int argc, char **argv) {
         FILE *res = fopen("../2d-convolution.time.res", "a+");
         FILE *check = fopen("../2d-convolution.res", "w+");
         if (res == NULL || check == NULL) {
+            free_resources(args, kernel, padded_img, padded_buffer, backup);
             bail_out("Could not open benchmark output files");
         }
         // start benchmarking
@@ -114,7 +118,7 @@ int main(int argc, char **argv) {
             }
             time_t seq_t = benchmark(&padded_img, kernel, args, &padded_buffer);
 
-            append_csv(res, image, args, seq_t);
+            append_csv(res, padded_img, args, seq_t);
             // TODO: this is not optimal
             Image *img = remove_padding(padded_img);
             write_checksum_to(check, sum_all(img));
@@ -124,24 +128,26 @@ int main(int argc, char **argv) {
         fflush(res);
         fclose(check);
         fclose(res);
-
     } else {
         // free resources
         if (args->debug) {
             fprintf(stderr, "Memory could not be allocated\n");
         }
-        free_image(kernel);
-        free_padded_image(padded_img);
-        free_padded_image(padded_buffer);
-        free_padded_image(backup);
+        free_resources(args, kernel, padded_img, padded_buffer, backup);
         return EXIT_FAILURE;
     }
     // free resources
+    free_resources(args, kernel, padded_img, padded_buffer, backup);
+    return 0;
+}
+
+void free_resources(Args *args, Image *kernel, ImageWithPadding *padded_img,
+                    ImageWithPadding *padded_buffer, ImageWithPadding *backup) {
     free_image(kernel);
     free_padded_image(padded_img);
     free_padded_image(padded_buffer);
     free_padded_image(backup);
-    return 0;
+    free_args(args);
 }
 
 time_t benchmark(ImageWithPadding **image, const Image *kernel, const Args *args, ImageWithPadding **buffer) {
