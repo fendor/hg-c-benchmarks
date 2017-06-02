@@ -188,7 +188,7 @@ static Image *create_image(Args *args) {
     return image;
 }
 
-static void __attribute__((noinline))
+static void // __attribute__((noinline))
 run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
                     ImageWithPadding **buffer) {
     for (int i = 0; i < args->number_of_iterations; i++) {
@@ -199,7 +199,7 @@ run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel,
 }
 
 
-static void __attribute__((noinline))
+static void // __attribute__((noinline))
 apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image *restrict kernel, const Args *args,
                              ImageWithPadding *buffer) {
 #pragma omp parallel for num_threads(args->number_of_processes)
@@ -210,7 +210,7 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image 
     }
 }
 
-static double __attribute__((noinline))
+static double // __attribute__((noinline))
 apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *restrict kernel, int pointX, int pointY) {
     double val = 0.0;
 
