@@ -118,7 +118,7 @@ static void run(Float3D *planets, Float3D *buffer, size_t numberOfPlanets, size_
             accel(planets, buffer, val, numberOfPlanets);
         }
 
-        swap_ptr((void **) &planets, (void **) &buffer);
+        swap_ptr( &planets, &buffer, Float3D *);
     }
 }
 
