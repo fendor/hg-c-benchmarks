@@ -204,6 +204,7 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image 
                              ImageWithPadding *buffer) {
 #pragma omp parallel for num_threads(args->number_of_processes)
     for (int y = 0; y < padded_img->inner_height; ++y) {
+#pragma simd
         for (int x = 0; x < padded_img->inner_width; ++x) {
             ACCESS_IMAGE(buffer, x, y) = apply_kernel_to_padded_point(padded_img, kernel, x, y);
         }
@@ -216,8 +217,10 @@ apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *restrict
 
 
     int newY = pointY - padded_img->padding;
+#pragma simd
     for (int y = 0; y < kernel->height; ++y) {
         int newX = pointX - padded_img->padding;
+#pragma simd
         for (int x = 0; x < kernel->width; ++x) {
             val += kernel->image[y][x] * ACCESS_IMAGE(padded_img, newX, newY);
             ++newX;
