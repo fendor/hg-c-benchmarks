@@ -386,15 +386,16 @@ ImageWithPadding *init_padded_image(int inner_width, int inner_height, int paddi
     int height = padded_img->height;
 
     padded_img->image = (double **) malloc(sizeof(double *) * height);
-    for (int y = 0; y < height; ++y) {
-        padded_img->image[y] = (double *) malloc(sizeof(double) * width);
+    for (int y = 0; y < padded_img->inner_height; ++y) {
+        padded_img->image[y + padding] = (double *) malloc(sizeof(double) * width);
         for (int x = 0; x < width; ++x) {
-            padded_img->image[y][x] = 0;
+            padded_img->image[y + padding][x] = 0;
         }
     }
 
     // unique hack, let the upper and lower padded rows point to the real image upper and lower bounds
     for (int y = 0; y < padded_img->padding; ++y) {
+
         padded_img->image[y] = padded_img->image[padded_img->padding];
         padded_img->image[padded_img->inner_height + padded_img->padding + y] =
                 padded_img->image[padded_img->inner_height + padded_img->padding - 1];
