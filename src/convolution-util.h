@@ -170,7 +170,7 @@ Image *get_default_kernel(void);
 /**
  * This Image is equal to the following Kernel
  *    0  1  0
- *    1 -4  0
+ *    1 -4  1
  *    0  1  0
  *
  * @return Return laplace Kernel Image
