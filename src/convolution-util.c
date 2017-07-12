@@ -50,11 +50,11 @@ Image *read_image_from_fd(FILE *fd, Args *args) {
 void print_image(Image *img) {
     for (int y = 0; y < img->height; ++y) {
         for (int x = 0; x < img->width; ++x) {
-            char *format = NULL;
+            char format[100];
             if (img->image[y][x] < 0) {
-                format = "%.05f\t";
+                strcpy(format, "%.05f\t");
             } else {
-                format = " %.05f\t";
+                strcpy(format, " %.05f\t");
             }
             printf(format, img->image[y][x]);
         }
@@ -337,11 +337,11 @@ void update_borders(ImageWithPadding *padded_img) {
 void print_padded_image(ImageWithPadding *padded_img) {
     for (int y = 0; y < padded_img->height; ++y) {
         for (int x = 0; x < padded_img->width; ++x) {
-            char *format = NULL;
+            char format[100];
             if (padded_img->image[y][x] < 0) {
-                format = "%.05f\t";
+                strcpy(format, "%.05f\t");
             } else {
-                format = " %.05f\t";
+                strcpy(format, " %.05f\t");
             }
             printf(format, padded_img->image[y][x]);
         }
