@@ -6,9 +6,6 @@
 #include "../src/convolution-util.h"
 #include "../src/convolution-util.c"
 
-#define ASSERT_ARRAY_EQ(a1, a2, len) do {for (int i=0; i<len; i++) { ASSERT_EQ(a1[i],a2[i]); }} while (0)
-
-
 TEST(init_image, init_image) {
     Image *img = init_image(5, 5, 0);
     double arr[5][5] = {{0.0, 0.0, 0.0, 0.0, 0.0},

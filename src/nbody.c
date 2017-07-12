@@ -15,9 +15,9 @@ struct Float3D {
 };
 
 struct {
-    size_t size;
-    size_t iterations;
-    size_t numberOfProcesses;
+    ssize_t size;
+    ssize_t iterations;
+    ssize_t numberOfProcesses;
     bool debug;
 } args;
 
@@ -118,7 +118,7 @@ static void run(Float3D *planets, Float3D *buffer, size_t numberOfPlanets, size_
             accel(planets, buffer, val, numberOfPlanets);
         }
 
-        swap_ptr( &planets, &buffer, Float3D *);
+        swap_ptr(&planets, &buffer, Float3D *);
     }
 }
 
@@ -193,13 +193,13 @@ static void parse_args(int argc, char **argv) {
                 args.debug = true;
                 break;
             case 'n':
-                args.iterations = (size_t) strtol(optarg, NULL, 10);
+                args.iterations = strtol(optarg, NULL, 10);
                 break;
             case 'p':
-                args.numberOfProcesses = (size_t) strtol(optarg, NULL, 10);
+                args.numberOfProcesses = strtol(optarg, NULL, 10);
                 break;
             case 's':
-                args.size = (size_t) strtol(optarg, NULL, 10);
+                args.size = strtol(optarg, NULL, 10);
                 break;
             case '?':
                 usage();
@@ -210,6 +210,7 @@ static void parse_args(int argc, char **argv) {
         }
     }
 
+    /* sanity checks*/
     if (args.size <= 0 || args.numberOfProcesses <= 0) {
         usage();
     }

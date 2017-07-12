@@ -4,15 +4,13 @@
 
 #include "convolution-util.h"
 
-
 #define MAX_SIZE 16384
 
 Image *read_image_from_fd(FILE *fd, Args *args) {
     if (fd != NULL) {
         char buf[MAX_SIZE];
         if (fgets(buf, MAX_SIZE, fd) != NULL) { ;
-            char *token = NULL;
-            token = strtok(buf, " ");
+            char *token = strtok(buf, " ");
             if (NULL == token) bail_out("height couldn't be read from file");
             int height = (int) strtol(token, NULL, 10);
             token = strtok(NULL, " ");
