@@ -12,14 +12,14 @@
  * @param args Program arguments
  * @return Created Image
  */
-static Image *create_image(Args *args);
+Image *create_image(Args *args);
 
 /**
  * Create kernel based on the arguments
  * @param args Program arguments
  * @return Created Kernel
  */
-static Image *create_kernel(Args *args);
+Image *create_kernel(Args *args);
 
 /**
  * Benchmark how long it takes to apply the kernel to an given image.
@@ -30,7 +30,7 @@ static Image *create_kernel(Args *args);
  * @param buffer Buffer to write the output to, must have same extent as the image
  * @return time it took to apply the kernel
  */
-static time_t benchmark(ImageWithPadding **image, const Image *kernel, const Args *args, ImageWithPadding **buffer);
+time_t benchmark(ImageWithPadding **image, const Image *kernel, const Args *args, ImageWithPadding **buffer);
 
 /**
  * Apply a given kernel on a pixel of an image.
@@ -42,8 +42,8 @@ static time_t benchmark(ImageWithPadding **image, const Image *kernel, const Arg
  * @param pointY y value of the image that is being investigated
  * @return Computed kernel value for the coordinate (pointX, pointY)
  */
-static double
-apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *restrict kernel, int pointX, int pointY);
+double
+apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *kernel, int pointX, int pointY);
 
 /**
  * Apply a given kernel of the size 5x5 on every pixel of an image.
@@ -55,8 +55,8 @@ apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *restrict
  * @param args Arguments to the program, number of iterations and used processes are used for computation
  * @param buffer Output buffer
  */
-static void
-apply_kernel_to_padded_image(ImageWithPadding *restrict img, const Image *restrict kernel, const Args *args,
+void
+apply_kernel_to_padded_image(ImageWithPadding *img, const Image *kernel, const Args *args,
                              ImageWithPadding *buffer);
 
 /**
@@ -67,8 +67,8 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict img, const Image *restri
  * @param buffer Buffer image to avoid repeated allocation
  * @param args Arguments to the program, number of iterations and used processes are used for computation
  */
-static void run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
-                                ImageWithPadding **buffer);
+void run_on_padded_image(ImageWithPadding **padded_img, const Image *kernel, const Args *args,
+                         ImageWithPadding **buffer);
 
 /**
  * Free all the resources
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
             bail_out("Could not open benchmark output files");
         }
         // start benchmarking
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 1; ++i) {
             if (copy_padded_image(backup, padded_img) < 0) {
                 free_resources(args, kernel, padded_img, padded_buffer, backup);
                 bail_out("Could not restore image, something must have been changed");
@@ -125,7 +125,9 @@ int main(int argc, char **argv) {
 
             append_csv(res, padded_img, args, seq_t);
             // TODO: this is not optimal
+            // could be reused
             Image *img = remove_padding(padded_img);
+            print_image(img);
             write_checksum_to(check, get_checksum(img));
             free_image(img);
         }
@@ -162,13 +164,12 @@ time_t benchmark(ImageWithPadding **image, const Image *kernel, const Args *args
     TIC(0);
     run_on_padded_image(image, kernel, args, buffer);
     seq_t = TOC(0); // stop the clock
-
     // print kernel time
     printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
     return seq_t;
 }
 
-static Image *create_kernel(Args *args) {
+Image *create_kernel(Args *args) {
     Image *kernel;
     if (args->opt_kernel_from_file) {
         FILE *fd = fopen(args->kernel_file_path, "r");
@@ -179,7 +180,7 @@ static Image *create_kernel(Args *args) {
     return kernel;
 }
 
-static Image *create_image(Args *args) {
+Image *create_image(Args *args) {
     Image *image;
     if (args->opt_image_from_file) {
         FILE *fd = fopen(args->image_file_path, "r");
@@ -190,10 +191,11 @@ static Image *create_image(Args *args) {
     return image;
 }
 
-static void // __attribute__((noinline))
-run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel, const Args *args,
+void // __attribute__((noinline))
+run_on_padded_image(ImageWithPadding **padded_img, const Image *kernel, const Args *args,
                     ImageWithPadding **buffer) {
     for (int i = 0; i < args->number_of_iterations; i++) {
+        print_padded_image(*padded_img);
         apply_kernel_to_padded_image(*padded_img, kernel, args, *buffer);
         update_borders(*buffer);
         swap_ptr(padded_img, buffer, ImageWithPadding*);
@@ -201,8 +203,8 @@ run_on_padded_image(ImageWithPadding **padded_img, const Image *restrict kernel,
 }
 
 
-static void // __attribute__((noinline))
-apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image *restrict kernel, const Args *args,
+void // __attribute__((noinline))
+apply_kernel_to_padded_image(ImageWithPadding *padded_img, const Image *kernel, const Args *args,
                              ImageWithPadding *buffer) {
 #pragma omp parallel for num_threads(args->number_of_processes)
     for (int y = 0; y < padded_img->inner_height; ++y) {
@@ -213,8 +215,8 @@ apply_kernel_to_padded_image(ImageWithPadding *restrict padded_img, const Image 
     }
 }
 
-static double // __attribute__((noinline))
-apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *restrict kernel, int pointX, int pointY) {
+double // __attribute__((noinline))
+apply_kernel_to_padded_point(ImageWithPadding *padded_img, const Image *kernel, int pointX, int pointY) {
     double val = 0.0;
 
 
