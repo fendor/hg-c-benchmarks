@@ -132,11 +132,11 @@ void bail_out(char *string);
 void append_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time);
 
 /**
- * Sum all pixels of the given image
+ * Sum all pixels of the given image, represents a checksum for comparison
  * @param img image of all pixels that shall be summed
  * @return Summed value of all pixels of the given image
  */
-double sum_all(Image *img);
+double get_checksum(Image *img);
 
 /**
  * Writes the checksum to file descriptor

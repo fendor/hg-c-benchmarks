@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
     // sanity check
     if (padded_img != NULL && padded_buffer != NULL && backup != NULL) {
         if (copy_padded_image(padded_img, backup) < 0) {
+            free_resources(args, kernel, padded_img, padded_buffer, backup);
             bail_out("Could not backup image");
         }
         // open benchmark files
@@ -117,6 +118,7 @@ int main(int argc, char **argv) {
         // start benchmarking
         for (int i = 0; i < 10; ++i) {
             if (copy_padded_image(backup, padded_img) < 0) {
+                free_resources(args, kernel, padded_img, padded_buffer, backup);
                 bail_out("Could not restore image, something must have been changed");
             }
             time_t seq_t = benchmark(&padded_img, kernel, args, &padded_buffer);
@@ -124,7 +126,7 @@ int main(int argc, char **argv) {
             append_csv(res, padded_img, args, seq_t);
             // TODO: this is not optimal
             Image *img = remove_padding(padded_img);
-            write_checksum_to(check, sum_all(img));
+            write_checksum_to(check, get_checksum(img));
             free_image(img);
         }
         fflush(check);
