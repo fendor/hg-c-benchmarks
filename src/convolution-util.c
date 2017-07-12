@@ -266,12 +266,6 @@ ImageWithPadding *add_padding(Image *img, int padding) {
         }
     }
     update_borders(padded_img);
-    // unique hack
-    for (int y = 0; y < padded_img->padding; ++y) {
-        padded_img->image[y] = padded_img->image[padded_img->padding];
-        padded_img->image[padded_img->inner_height + padded_img->padding + y] =
-                padded_img->image[padded_img->inner_height + padded_img->padding - 1];
-    }
     return padded_img;
 }
 
@@ -398,5 +392,13 @@ ImageWithPadding *init_padded_image(int inner_width, int inner_height, int paddi
             padded_img->image[y][x] = 0;
         }
     }
+
+    // unique hack, let the upper and lower padded rows point to the real image upper and lower bounds
+    for (int y = 0; y < padded_img->padding; ++y) {
+        padded_img->image[y] = padded_img->image[padded_img->padding];
+        padded_img->image[padded_img->inner_height + padded_img->padding + y] =
+                padded_img->image[padded_img->inner_height + padded_img->padding - 1];
+    }
+
     return padded_img;
 }
