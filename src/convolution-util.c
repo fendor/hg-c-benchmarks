@@ -289,7 +289,6 @@ Image *remove_padding(ImageWithPadding *padded_img) {
 }
 
 void update_borders(ImageWithPadding *padded_img) {
-    int height = padded_img->height;
     int width = padded_img->width;
     // TODO: all three loops can be merged into one: would this be reasonable?
     // left and right bounds
