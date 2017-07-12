@@ -35,7 +35,7 @@ TEST(init_image, init_image_with_negative_number) {
 
     for (int x = 0; x < 5; ++x) {
         for (int y = 0; y < 5; ++y) {
-            ASSERT_EQ(img->image[y][x], arr[y][x]);
+            ASSERT_EQ(img->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(5, img->width);
@@ -54,7 +54,7 @@ TEST(init_padded_image, init_image_padded) {
 
     for (int x = 0; x < 5; ++x) {
         for (int y = 0; y < 5; ++y) {
-            ASSERT_EQ(padding->image[y][x], arr[y][x]);
+            ASSERT_EQ(padding->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -78,7 +78,7 @@ TEST(init_padded_image, add_padding) {
 
     for (int x = 0; x < 7; ++x) {
         for (int y = 0; y < 7; ++y) {
-            ASSERT_EQ(padding->image[y][x], arr[y][x]);
+            ASSERT_EQ(padding->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -117,7 +117,7 @@ TEST(init_padded_image, add_padding_complicated_image) {
 
     for (int x = 0; x < 7; ++x) {
         for (int y = 0; y < 7; ++y) {
-            ASSERT_EQ(padding->image[y][x], arr[y][x]);
+            ASSERT_EQ(padding->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -154,7 +154,7 @@ TEST(to_image, remove_complicated_padding) {
     Image *img = remove_padding(padding);
     for (int x = 0; x < 3; ++x) {
         for (int y = 0; y < 3; ++y) {
-            ASSERT_EQ(expected[y][x], img->image[y][x]);
+            ASSERT_EQ(expected[y][x], img->image[y][x]) << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -174,4 +174,53 @@ TEST(get_checksum, calculate_simple_checksum) {
     ASSERT_EQ(-5 * 5 * 5, get_checksum(img));
 
     free_image(img);
+}
+
+TEST(update_borders, check_if_borders_have_been_updated) {
+    /* initialize test data */
+    ImageWithPadding *padding = init_padded_image(3, 3, 2);
+    double padded_image[7][7] = {{-1.5, -1.5, -1.5, 0,  -1, -1, -1},
+                                 {-1.5, -1.5, -1.5, 0,  -1, -1, -1},
+                                 {-1.5, -1.5, -1.5, 0,  -1, -1, -1},
+                                 {9,    9,    9,    -2, 3,  3,  3},
+                                 {2,    2,    2,    0,  5,  5,  5},
+                                 {2,    2,    2,    0,  5,  5,  5},
+                                 {2,    2,    2,    0,  5,  5,  5}};
+    /* copy data */
+    for (int x = 0; x < 7; ++x) {
+        for (int y = 0; y < 7; ++y) {
+            ACCESS_FIELD(padding, x, y) = padded_image[y][x];
+        }
+    }
+    /* initialize result */
+    double result[7][7] = {{2, 2, 2, 0,  100, 100, 100},
+                           {2, 2, 2, 0,  100, 100, 100},
+                           {2, 2, 2, 0,  100, 100, 100},
+                           {1, 1, 1, 0,  3,   3,   3},
+                           {2, 2, 2, -1, 5,   5,   5},
+                           {2, 2, 2, -1, 5,   5,   5},
+                           {2, 2, 2, -1, 5,   5,   5}};
+
+    /* make changes */
+    ACCESS_IMAGE(padding, 0, 0) = 2;
+    ACCESS_IMAGE(padding, 1, 0) = 0;
+    ACCESS_IMAGE(padding, 2, 0) = 100;
+    ACCESS_IMAGE(padding, 0, 1) = 1;
+    ACCESS_IMAGE(padding, 1, 1) = 0;
+    ACCESS_IMAGE(padding, 1, 2) = -1;
+    ACCESS_IMAGE(padding, 2, 2) = 5;
+
+    update_borders(padding);
+    for (int x = 0; x < 7; ++x) {
+        for (int y = 0; y < 7; ++y) {
+            ASSERT_EQ(result[y][x], ACCESS_FIELD(padding, x, y))
+                                        << "Following indices did not match: " << x << ", " << y;
+        }
+    }
+    ASSERT_EQ(7, padding->width);
+    ASSERT_EQ(7, padding->height);
+    ASSERT_EQ(3, padding->inner_width);
+    ASSERT_EQ(3, padding->inner_height);
+
+    free_padded_image(padding);
 }
