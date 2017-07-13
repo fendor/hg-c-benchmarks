@@ -11,7 +11,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 
-/*
+/**
  * Global program name, must be set before any other instruction
  */
 char *pgmname;
