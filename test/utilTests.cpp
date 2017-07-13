@@ -2,8 +2,8 @@
 // Created by baldr on 5/23/17.
 //
 #include <gtest/gtest.h>
-#include "../src/util.c"
-#include "../src/util.h"
+#include "../src/util/util.c"
+#include "../src/util/util.h"
 
 
 TEST(clamper, clamp) {

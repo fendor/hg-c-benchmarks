@@ -3,8 +3,8 @@
 //
 
 #include <gtest/gtest.h>
-#include "../src/convolution-util.h"
-#include "../src/convolution-util.c"
+#include "../src/convolution/convolution-util.h"
+#include "../src/convolution/convolution-util.c"
 
 TEST(init_image, init_image) {
     Image *img = init_image(5, 5, 0);
@@ -35,7 +35,8 @@ TEST(init_image, init_image_with_negative_number) {
 
     for (int x = 0; x < 5; ++x) {
         for (int y = 0; y < 5; ++y) {
-            ASSERT_EQ(img->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
+            ASSERT_EQ(img->image[y][x], arr[y][x])
+                                        << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(5, img->width);
@@ -54,7 +55,8 @@ TEST(init_padded_image, init_image_padded) {
 
     for (int x = 0; x < 5; ++x) {
         for (int y = 0; y < 5; ++y) {
-            ASSERT_EQ(padding->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
+            ASSERT_EQ(padding->image[y][x], arr[y][x])
+                                        << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -78,7 +80,8 @@ TEST(init_padded_image, add_padding) {
 
     for (int x = 0; x < 7; ++x) {
         for (int y = 0; y < 7; ++y) {
-            ASSERT_EQ(padding->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
+            ASSERT_EQ(padding->image[y][x], arr[y][x])
+                                        << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -117,7 +120,8 @@ TEST(init_padded_image, add_padding_complicated_image) {
 
     for (int x = 0; x < 7; ++x) {
         for (int y = 0; y < 7; ++y) {
-            ASSERT_EQ(padding->image[y][x], arr[y][x]) << "Following indices did not match: " << x << ", " << y;
+            ASSERT_EQ(padding->image[y][x], arr[y][x])
+                                        << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);
@@ -154,7 +158,8 @@ TEST(to_image, remove_complicated_padding) {
     Image *img = remove_padding(padding);
     for (int x = 0; x < 3; ++x) {
         for (int y = 0; y < 3; ++y) {
-            ASSERT_EQ(expected[y][x], img->image[y][x]) << "Following indices did not match: " << x << ", " << y;
+            ASSERT_EQ(expected[y][x], img->image[y][x])
+                                        << "Following indices did not match: " << x << ", " << y;
         }
     }
     ASSERT_EQ(7, padding->width);

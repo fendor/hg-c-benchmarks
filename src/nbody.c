@@ -3,7 +3,7 @@
 #include <math.h>
 #include <getopt.h>
 #include <stdbool.h>
-#include "util.h"
+#include "util/util.h"
 
 #define G (9.8)
 #define EPS (0.005)
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
             TIC(0);
             run(planets, buffer, args.size, args.iterations);
             time_t seq_t = TOC(0);
-            printf("Kernel time: %zu.%06zus\n", seq_t / 1000000, seq_t % 1000000);
+            printf("Kernel time: %zi.%06zis\n", seq_t / 1000000, seq_t % 1000000);
 
             if (res != NULL) {
                 append_csv(res, seq_t);
@@ -217,7 +217,7 @@ static void parse_args(int argc, char **argv) {
 }
 
 static void print_args(void) {
-    printf("Args -> number of Planets: %zu, iterations: %zu, processes: %zu\n", args.size, args.iterations,
+    printf("Args -> number of Planets: %zi, iterations: %zi, processes: %zi\n", args.size, args.iterations,
            args.numberOfProcesses
     );
 }

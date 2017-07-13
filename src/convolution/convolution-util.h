@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <getopt.h>
-#include "util.h"
+#include "../util/util.h"
 
 #define ACCESS_IMAGE(img, x, y) (img->image[(y) + (img->padding)][(x) + (img->padding)])
 #define ACCESS_FIELD(img, x, y) (img->image[y][x])
