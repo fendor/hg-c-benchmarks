@@ -175,7 +175,7 @@ static void pretty_print(FILE *fd, Float3D *planets, size_t size) {
 }
 
 static void append_csv(FILE *fd, time_t seq_t) {
-    fprintf(fd, "%zu,%zu,%zu,%zu\n", args.numberOfProcesses, args.size, args.iterations, seq_t);
+    fprintf(fd, "%zi,%zi,%zi,%zi\n", args.numberOfProcesses, args.size, args.iterations, seq_t);
 }
 
 static void parse_args(int argc, char **argv) {

@@ -22,24 +22,33 @@ TEST(run_on_image, run_once) {
     img->image[2][2] = 5;
 
     Args args = {
-            .number_of_iterations = 1,
-            .opt_height= true,
-            .height = 3,
-            .width = 3,
-            .opt_width = true,
-            .number_of_processes = 1,
+            1,
+            true,
+            3,
+            3,
+            true,
+            1,
     };
 
-    ImageWithPadding *padded = add_padding(img);
+    ImageWithPadding *padded = add_padding(img, 1);
     free_image(img);
-    ImageWithPadding *buffer = copy_padded_image(padded);
-    Image *laplace = get_2d_laplace_kernel();
-    run_on_padded_image(&padded, laplace, args, &buffer);
+    ImageWithPadding *buffer = init_padded_image(3, 3, 1);
+    copy_padded_image(padded, buffer);
+    Image *laplace = init_image(3, 3, 0);
+    laplace->image[1][1] = -1;
+    laplace->image[0][1] = 0.25;
+    laplace->image[2][1] = 0.25;
+    laplace->image[1][0] = 0.25;
+    laplace->image[1][2] = 0.25;
+
+
+    run_on_padded_image(&padded, laplace, &args, &buffer);
     Image *result = remove_padding(padded);
+
+    ASSERT_EQ(0, get_checksum(result));
 
     free_padded_image(padded);
     free_padded_image(buffer);
     free_image(result);
     free_image(laplace);
 }
-

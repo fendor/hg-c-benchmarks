@@ -109,6 +109,7 @@ int main(int argc, char **argv) {
             bail_out("Could not backup image");
         }
         // open benchmark files
+        // TODO: make this definable by argument
         FILE *res = fopen("../2d-convolution.time.res", "a+");
         FILE *check = fopen("../2d-convolution.res", "w+");
         if (res == NULL || check == NULL) {
@@ -116,7 +117,8 @@ int main(int argc, char **argv) {
             bail_out("Could not open benchmark output files");
         }
         // start benchmarking
-        for (int i = 0; i < 1; ++i) {
+        // TODO: make this definable by argument
+        for (int i = 0; i < 10; ++i) {
             if (copy_padded_image(backup, padded_img) < 0) {
                 free_resources(args, kernel, padded_img, padded_buffer, backup);
                 bail_out("Could not restore image, something must have been changed");
@@ -127,7 +129,6 @@ int main(int argc, char **argv) {
             // TODO: this is not optimal
             // could be reused
             Image *img = remove_padding(padded_img);
-            print_image(img);
             write_checksum_to(check, get_checksum(img));
             free_image(img);
         }
@@ -195,7 +196,6 @@ void // __attribute__((noinline))
 run_on_padded_image(ImageWithPadding **padded_img, const Image *kernel, const Args *args,
                     ImageWithPadding **buffer) {
     for (int i = 0; i < args->number_of_iterations; i++) {
-        print_padded_image(*padded_img);
         apply_kernel_to_padded_image(*padded_img, kernel, args, *buffer);
         update_borders(*buffer);
         swap_ptr(padded_img, buffer, ImageWithPadding*);
