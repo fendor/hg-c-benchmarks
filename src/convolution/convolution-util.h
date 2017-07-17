@@ -129,7 +129,7 @@ void bail_out(char *string);
  * @param args Arguments for number of processes and how many times the benchmarks has been iterated
  * @param time Time it took to execute the benchmark
  */
-void append_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time);
+void append_convolution_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time);
 
 /**
  * Sum all pixels of the given image, represents a checksum for comparison

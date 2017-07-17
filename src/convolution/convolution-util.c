@@ -245,7 +245,7 @@ double smart_access(Image *img, int x, int y) {
 }
 
 
-void append_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time) {
+void append_convolution_csv(FILE *fd, ImageWithPadding *img, Args *args, time_t time) {
     fprintf(fd, "%d,%d,%d,%d,%zu\n", args->number_of_processes, img->inner_height, img->inner_width,
             args->number_of_iterations,
             time);

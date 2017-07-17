@@ -82,6 +82,6 @@ void usage() {
     exit(1);
 }
 
-void append_csv(FILE *fd, Args *args, time_t seq_t) {
+void append_nbody_csv(FILE *fd, Args *args, time_t seq_t) {
     fprintf(fd, "%zi,%zi,%zi,%zi\n", args->number_of_processes, args->size, args->iterations, seq_t);
 }

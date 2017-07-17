@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
             }
             time_t seq_t = benchmark(&padded_img, kernel, args, &padded_buffer);
 
-            append_csv(res, padded_img, args, seq_t);
+            append_convolution_csv(res, padded_img, args, seq_t);
             // TODO: this is not optimal
             // could be reused
             Image *img = remove_padding(padded_img);

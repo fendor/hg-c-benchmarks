@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
             printf("Kernel time: %zi.%06zis\n", seq_t / 1000000, seq_t % 1000000);
 
             if (res != NULL) {
-                append_csv(res, args, seq_t);
+                append_nbody_csv(res, args, seq_t);
             }
 
         }

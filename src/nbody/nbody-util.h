@@ -96,6 +96,6 @@ void print_args(Args *args);
  * @param fd File Descriptor of the csv file to append the output to
  * @param seq_t Time of this benchmark
  */
-void append_csv(FILE *fd, Args *args, time_t seq_t);
+void append_nbody_csv(FILE *fd, Args *args, time_t seq_t);
 
 #endif //HG_C_BENCHMARKS_NBODY_UTIL_H
