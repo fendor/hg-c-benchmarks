@@ -36,7 +36,7 @@ endif ()
 set(CMAKE_VERBOSE_MAKEFILE on)
 enable_testing()
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_COMPILER gcc)
 
 add_executable(Nbody-OpenMP src/nbody.c src/util/util.c src/nbody/nbody-util.c src/nbody/nbody-run.c)
