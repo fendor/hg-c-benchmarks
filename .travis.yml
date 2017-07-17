@@ -1,0 +1,10 @@
+language: c
+
+before_install:
+  - mkdir cmake-build-debug
+
+install:
+  - cd cmake-build-debug
+  - cmake ..
+  - make all
+  - ./test/all_tests
