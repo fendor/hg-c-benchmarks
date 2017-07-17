@@ -40,12 +40,12 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_COMPILER gcc)
 
 add_executable(Nbody-OpenMP src/nbody.c src/util/util.c src/nbody/nbody-util.c src/nbody/nbody-run.c)
-set_target_properties(Nbody-OpenMP PROPERTIES COMPILE_FLAGS "-O2 -march=broadwell -Wall -pedantic -fopenmp")
+set_target_properties(Nbody-OpenMP PROPERTIES COMPILE_FLAGS "-O2 -march=native -Wall -pedantic -fopenmp")
 set_target_properties(Nbody-OpenMP PROPERTIES LINK_FLAGS -fopenmp)
 target_link_libraries(Nbody-OpenMP m)
 
 add_executable(2D-Convolution src/2d-convolution.c src/util/util.c src/convolution/convolution-util.c src/convolution/convolution-run.c)
-set_target_properties(2D-Convolution PROPERTIES COMPILE_FLAGS "-O3 -march=broadwell -msse2 -mavx -Wall -pedantic -fopenmp")
+set_target_properties(2D-Convolution PROPERTIES COMPILE_FLAGS "-O3 -march=native -msse2 -mavx -Wall -pedantic -fopenmp")
 set_target_properties(2D-Convolution PROPERTIES LINK_FLAGS -fopenmp)
 target_link_libraries(2D-Convolution m)
 
