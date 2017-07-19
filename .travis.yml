@@ -2,10 +2,22 @@
 language: c
 
 before_install:
+  - export OMP_NUM_THREADS=2
   - mkdir cmake-build-debug
 
 install:
   - cd cmake-build-debug
   - cmake ..
   - make all
-  - ./test/all_tests
+  - cd ..
+
+script:
+  - ./cmake-build-debug/test/all_tests
+
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports
+    packages:
+      - cmake-data
+      - cmake
