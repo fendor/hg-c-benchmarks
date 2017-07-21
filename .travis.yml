@@ -12,7 +12,8 @@ install:
   - cd ..
 
 script:
-  - ./cmake-build-debug/test/all_tests
+  - ./cmake-build-debug/test/convolution_tests
+  - ./cmake-build-debug/test/nbody_tests
 
 addons:
   apt:
