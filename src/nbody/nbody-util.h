@@ -10,13 +10,9 @@
 #include <math.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include "../util/util.h"
 
-/**
- * Global program name, must be set before any other instruction
- */
-char *pgmname;
-
-// TODO: change signature
+// TODO: change signature: prefer arrays
 /**
  * Represents a body, flowing in a 3D system
  */

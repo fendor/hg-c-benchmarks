@@ -6,6 +6,7 @@
 #include "../src/nbody/nbody-util.h"
 
 
-TEST(nbody-util, fill_planet) {
-    Float3D float3D
+TEST(nbody_util, fill_planet) {
+    // dummy test for now
+    ASSERT_EQ(1, 1);
 }
