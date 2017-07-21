@@ -60,11 +60,6 @@ void print_image(Image *img) {
     }
 }
 
-void bail_out(char *string) {
-    fprintf(stderr, "Error: %s: %s", pgmname, string);
-    exit(2);
-}
-
 double get_checksum(Image *img) {
     double val = 0.0;
     for (int y = 0; y < img->height; ++y) {
@@ -155,6 +150,15 @@ Image *get_default_kernel(void) {
     return img;
 }
 
+/**
+ * Prints Synopsis of the program
+ */
+void usage() {
+    fprintf(stderr,
+            "SYNOPSIS: %s [-d] [-p number_of_processes] ([-w width] [-h height] || -f image_file_name) [-k kernel_file_name] [-n iterations]\n",
+            pgmname);
+    exit(1);
+}
 
 void print_args(Args *args) {
     printf("Args: width: %d, height: %d, iterations: %d, processes: %d\n", args->width, args->height,
@@ -233,12 +237,6 @@ Args *parse_args(int argc, char **argv) {
     return args;
 }
 
-void usage() {
-    fprintf(stderr,
-            "SYNOPSIS: %s [-d] [-p number_of_processes] ([-w width] [-h height] || -f image_file_name) [-k kernel_file_name] [-n iterations]\n",
-            pgmname);
-    exit(1);
-}
 
 double smart_access(Image *img, int x, int y) {
     return img->image[clamp(0, y, img->height - 1)][clamp(0, x, img->width - 1)];

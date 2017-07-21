@@ -12,6 +12,15 @@ void pretty_print(FILE *fd, Float3D *planets, ssize_t size) {
     fflush(fd);
 }
 
+
+/**
+ * Prints Synopsis of the program
+ */
+void usage() {
+    fprintf(stderr, "SYNOPSIS: %s [-d] [-p number_of_processes] [-s number_of_planets] [-n iterations]\n", pgmname);
+    exit(1);
+}
+
 Args *parse_args(int argc, char **argv) {
     // default values according to the haskell program
     Args *args = (Args *) malloc(sizeof(Args));
@@ -55,12 +64,21 @@ Args *parse_args(int argc, char **argv) {
     return args;
 }
 
-void free_resources(Float3D *planets, Float3D *buffer) {
+void free_resources(Float3D *planets, Float3D *buffer, FILE *p_file, FILE *q_file) {
     if (planets != NULL) {
         free(planets);
     }
     if (buffer != NULL) {
         free(buffer);
+    }
+
+    if (p_file != NULL) {
+        fflush(p_file);
+        fclose(p_file);
+    }
+    if (q_file != NULL) {
+        fflush(q_file);
+        fclose(q_file);
     }
 }
 
@@ -77,10 +95,6 @@ void fill_planet(Float3D *p, int i) {
     p->z = i * 30.0;
 }
 
-void usage() {
-    fprintf(stderr, "SYNOPSIS: %s [-d] [-p number_of_processes] [-s number_of_planets] [-n iterations]\n", pgmname);
-    exit(1);
-}
 
 void append_nbody_csv(FILE *fd, Args *args, time_t seq_t) {
     fprintf(fd, "%zi,%zi,%zi,%zi\n", args->number_of_processes, args->size, args->iterations, seq_t);

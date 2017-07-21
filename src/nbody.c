@@ -12,9 +12,10 @@ int main(int argc, char **argv) {
     Float3D *planets = (Float3D *) malloc(sizeof(Float3D) * args->size);
     Float3D *buffer = (Float3D *) malloc(sizeof(Float3D) * args->size);
 
-    if (planets != NULL && buffer != NULL) {
-        FILE *res = fopen("../nbody.time.res", "a+");
-        FILE *check = fopen("../nbody.res", "w+");
+    FILE *res = fopen("../nbody.time.res", "a+");
+    FILE *check = fopen("../nbody.res", "w+");
+
+    if (planets != NULL && buffer != NULL && res != NULL && check != NULL) {
         for (int n = 0; n < 10; ++n) {
             for (int i = 0; i < args->size; i++) {
                 fill_planet(&planets[i], i);
@@ -25,23 +26,16 @@ int main(int argc, char **argv) {
             time_t seq_t = TOC(0);
             printf("Kernel time: %zi.%06zis\n", seq_t / 1000000, seq_t % 1000000);
 
-            if (res != NULL) {
-                append_nbody_csv(res, args, seq_t);
-            }
+            append_nbody_csv(res, args, seq_t);
+
 
         }
-        if (res != NULL) {
-            fflush(res);
-            fclose(res);
-        }
-        if (check != NULL) {
-            pretty_print(check, planets, args->size);
-            fflush(check);
-            fclose(check);
-        }
+        pretty_print(check, planets, args->size);
+
     } else {
-        printf("Could not allocate with malloc!");
+        free_resources(planets, buffer, res, check);
+        bail_out("Resources could not be allocated");
     }
-    free_resources(planets, buffer);
+    free_resources(planets, buffer, res, check);
     return 0;
 }

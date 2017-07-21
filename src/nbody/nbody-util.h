@@ -61,8 +61,10 @@ void fill_planet(Float3D *p, int i);
  *
  * @param planets Pointer to planets
  * @param buffer Pointer to buffer
+ * @param p_file fd to some file you want to have closed
+ * @param q_file fd to some file you want to have closed
  */
-void free_resources(Float3D *planets, Float3D *buffer);
+void free_resources(Float3D *planets, Float3D *buffer, FILE *p_file, FILE *q_file);
 
 /**
  * Helper Function to write the planet array to an file descriptor
@@ -72,11 +74,6 @@ void free_resources(Float3D *planets, Float3D *buffer);
  * @param size Number of Planets
  */
 void pretty_print(FILE *fd, Float3D *planets, ssize_t size);
-
-/**
- * Shows usage of this program
- */
-void usage();
 
 /**
  * Parse the arguments of this program

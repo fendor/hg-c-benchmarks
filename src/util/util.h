@@ -7,7 +7,19 @@
 #include <sys/time.h>
 #include <stdlib.h>
 
+/**
+ * Name of the Program.
+ * Must be set in the main before calling any other function.
+ */
+char *pgmname;
+
+/**
+ * gets current time in microseconds
+ *
+ * @return time in microseconds
+ */
 time_t mytime(void);
+
 // (re)-start clock
 #define TIC(i) (time_for_tic[i] = mytime())
 // read clock time since last restart
@@ -33,5 +45,11 @@ int clamp(int lower, int value, int upper);
  * @param t type of the pointers to swap
  */
 #define swap_ptr(a, b, t) do { t tmp = *a; *a = *b; *b = tmp; } while(0);
+
+/**
+ * Bail out of the program
+ * @param string Custom message, may be NULL
+ */
+void bail_out(char *string);
 
 #endif //HG_C_BENCHMARKS_UTIL_H

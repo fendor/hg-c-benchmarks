@@ -60,12 +60,6 @@ typedef struct Image Image;
 typedef struct ImageWithPadding ImageWithPadding;
 
 /**
- * Name of the Program.
- * Must be set in the main before calling any other function.
- */
-char *pgmname;
-
-/**
  * Helper function to print the image in an easy way to read
  * @param img Image that shall be printed, line based
  */
@@ -92,11 +86,6 @@ Args *parse_args(int argc, char **argv);
 Image *read_image_from_fd(FILE *fd, Args *args);
 
 /**
- * Prints Synopsis of the program
- */
-void usage();
-
-/**
  * Print the argument struct
  * @param args Arguments to print
  */
@@ -114,12 +103,6 @@ void print_args(Args *args);
  * @return Error code, non-zero indicates error
  */
 int copy_image(Image *from, Image *to);
-
-/**
- * Bail out of the program
- * @param string Custom message, may be NULL
- */
-void bail_out(char *string);
 
 /**
  * Append to a file the output of the benchmark.
