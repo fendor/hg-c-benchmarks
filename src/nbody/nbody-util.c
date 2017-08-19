@@ -6,8 +6,7 @@
 
 void pretty_print(FILE *fd, Float3D *planets, ssize_t size) {
     for (int i = 0; i < size; i++) {
-        Float3D p = planets[i];
-        fprintf(fd, "(%g, %g, %g)\n", p.x, p.y, p.z);
+        fprintf(fd, "(%g, %g, %g)\n", planets->x[i], planets->y[i], planets->z[i]);
     }
     fflush(fd);
 }
@@ -64,11 +63,44 @@ Args *parse_args(int argc, char **argv) {
     return args;
 }
 
+Float3D *new_simulation(ssize_t size) {
+    Float3D *sim = (Float3D *) malloc(sizeof(Float3D));
+    if (sim != NULL) {
+        sim->x = (double *) malloc(sizeof(double) * size);
+        if (sim->x != NULL) {
+            sim->y = (double *) malloc(sizeof(double) * size);
+            if (sim->y != NULL) {
+                sim->z = (double *) malloc(sizeof(double) * size);
+
+                if (sim->z != NULL) {
+                    return sim;
+                } else {
+                    free(sim->x);
+                    free(sim->y);
+                    free(sim);
+                }
+            } else {
+                free(sim->x);
+                free(sim);
+            }
+        } else {
+            free(sim);
+        }
+    }
+    return NULL;
+}
+
 void free_resources(Float3D *planets, Float3D *buffer, FILE *p_file, FILE *q_file) {
     if (planets != NULL) {
+        free(planets->x);
+        free(planets->y);
+        free(planets->z);
         free(planets);
     }
     if (buffer != NULL) {
+        free(buffer->x);
+        free(buffer->y);
+        free(buffer->z);
         free(buffer);
     }
 
@@ -89,10 +121,10 @@ void print_args(Args *args) {
 }
 
 
-void fill_planet(Float3D *p, int i) {
-    p->x = i * 1.0;
-    p->y = i * 0.2;
-    p->z = i * 30.0;
+void fill_planet(Float3D *p, int j, int offset) {
+    p->x[j] = offset * 1.0;
+    p->y[j] = offset * 0.2;
+    p->z[j] = offset * 30.0;
 }
 
 

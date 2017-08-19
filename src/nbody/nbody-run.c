@@ -3,25 +3,27 @@
 //
 #include "nbody-run.h"
 
-void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out) {
-    double dx = p2.x - p1.x;
-    double dy = p2.y - p1.y;
-    double dz = p2.z - p1.z;
+void pair_wise_accel(Float3D *p1, Float3D *p2, int i, int j, double *x, double *y, double *z) {
+    // TODO: vectorise
+    double dx = p2->x[j] - p1->x[i];
+    double dy = p2->y[j] - p1->y[i];
+    double dz = p2->z[j] - p1->z[i];
     double distance_sq = dx * dx + dy * dy + dz * dz + EPS;
     double factor = 1.0 / sqrt(distance_sq * distance_sq * distance_sq);
-    out->x += dx * factor;
-    out->y += dy * factor;
-    out->z += dz * factor;
+    *x += dx * factor;
+    *y += dy * factor;
+    *z += dz * factor;
 }
 
 void accel(Float3D *planets, Float3D *buffer, int index, ssize_t size) {
-    Float3D acc = {.x = 0.0, .y = 0.0, .z = 0.0};
+    double x = 0.0, y = 0.0, z = 0.0;
+#pragma omp simd
     for (int i = 0; i < size; i++) {
-        pair_wise_accel(planets[index], planets[i], &acc);
+        pair_wise_accel(planets, planets, index, i, &x, &y, &z);
     }
-    buffer[index].x = G * acc.x;
-    buffer[index].y = G * acc.y;
-    buffer[index].z = G * acc.z;
+    buffer->x[index] = G * x;
+    buffer->y[index] = G * y;
+    buffer->z[index] = G * z;
 }
 
 void

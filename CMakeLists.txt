@@ -42,7 +42,7 @@ set(CMAKE_CXX_FLAGS -std=c++11)
 set(CMAKE_C_COMPILER gcc)
 
 add_executable(Nbody-OpenMP src/nbody.c src/util/util.c src/nbody/nbody-util.c src/nbody/nbody-run.c)
-set_target_properties(Nbody-OpenMP PROPERTIES COMPILE_FLAGS "-O2 -march=native -Wall -pedantic -fopenmp")
+set_target_properties(Nbody-OpenMP PROPERTIES COMPILE_FLAGS "-O3 -fopenmp")
 set_target_properties(Nbody-OpenMP PROPERTIES LINK_FLAGS -fopenmp)
 target_link_libraries(Nbody-OpenMP m)
 

@@ -14,12 +14,12 @@
 
 // TODO: change signature: prefer arrays
 /**
- * Represents a body, flowing in a 3D system
+ * Represents a Simulation, flowing in a 3D system
  */
 struct Float3D {
-    double x;
-    double y;
-    double z;
+    double *x;
+    double *y;
+    double *z;
 };
 
 /**
@@ -45,12 +45,21 @@ typedef struct Float3D Float3D;
 typedef struct arguments Args;
 
 /**
+ * Create a new n body simulation
+ * Allocates the required memory
+ * @param size Number of bodies for the simulation
+ * @return Simulation struct containing all required information
+ */
+Float3D *new_simulation(ssize_t size);
+
+/**
  * Helper function to fil a planet according to the haskell implementation
  *
- * @param p planet to fill with coordinates
- * @param i offset of the planet, can be a index
+ * @param p simulation to fill
+ * @param j index to fill
+ * @param offset offset of the planet, can be an index
  */
-void fill_planet(Float3D *p, int i);
+void fill_planet(Float3D *p, int j, int offset);
 
 /**
  * Free the allocated memory

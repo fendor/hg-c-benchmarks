@@ -18,9 +18,11 @@
  *
  * @param p1 acceleration of this planet
  * @param p2 acceleration caused by this planet
- * @param out stored acceleration
+ * @param x accumulation value x
+ * @param y accumulation value y
+ * @param z accumulation value z
  */
-void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out);
+void pair_wise_accel(Float3D *p1, Float3D *p2, int i, int j, double *x, double *y, double *z);
 
 /**
  * Compute acceleration of one planet to all its neighbours.
