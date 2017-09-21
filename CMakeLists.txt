@@ -47,7 +47,7 @@ set_target_properties(Nbody-OpenMP PROPERTIES LINK_FLAGS -fopenmp)
 target_link_libraries(Nbody-OpenMP m)
 
 add_executable(2D-Convolution src/2d-convolution.c src/util/util.c src/convolution/convolution-util.c src/convolution/convolution-run.c)
-set_target_properties(2D-Convolution PROPERTIES COMPILE_FLAGS "-O3 -march=native -msse2 -mavx -Wall -pedantic -fopenmp")
+set_target_properties(2D-Convolution PROPERTIES COMPILE_FLAGS "-O3 -march=native -Wall -pedantic -fopenmp")
 set_target_properties(2D-Convolution PROPERTIES LINK_FLAGS -fopenmp)
 target_link_libraries(2D-Convolution m)
 
