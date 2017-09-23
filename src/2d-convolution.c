@@ -7,6 +7,10 @@
 #include "convolution/convolution-util.h"
 #include "convolution/convolution-run.h"
 
+#ifndef REPITION
+#define REPITION (1)
+#endif
+
 /**
  * Free all the resources
  */
@@ -55,7 +59,7 @@ int main(int argc, char **argv) {
         }
         // start benchmarking
         // TODO: make this definable by argument
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < REPITION; ++i) {
             if (copy_padded_image(backup, padded_img) < 0) {
                 free_resources(args, kernel, padded_img, padded_buffer, backup);
                 bail_out("Could not restore image, something must have been changed");

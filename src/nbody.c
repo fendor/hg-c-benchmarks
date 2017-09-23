@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include "nbody/nbody-run.h"
 
+
+#ifndef REPITION
+#define REPITION (1)
+#endif
+
+
 int main(int argc, char **argv) {
     pgmname = argv[0];
     Args *args = parse_args(argc, argv);
@@ -16,7 +22,7 @@ int main(int argc, char **argv) {
     FILE *check = fopen("../nbody.res", "w+");
 
     if (planets != NULL && buffer != NULL && res != NULL && check != NULL) {
-        for (int n = 0; n < 1; ++n) {
+        for (int n = 0; n < REPITION; ++n) {
             for (int i = 0; i < args->size; i++) {
                 fill_planet(&planets[i], i);
             }
