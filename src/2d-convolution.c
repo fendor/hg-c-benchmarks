@@ -45,9 +45,13 @@ int main(int argc, char **argv) {
     free_image(image);
     // sanity check
     if (padded_img != NULL && padded_buffer != NULL && backup != NULL) {
-        if (copy_padded_image(padded_img, backup) < 0) {
+        int ret = copy_padded_image(padded_img, backup);
+        if (ret == -1) {
             free_resources(args, kernel, padded_img, padded_buffer, backup);
-            bail_out("Could not backup image");
+            bail_out("Could not backup image, something was NULL");
+        } else if (ret == -2) {
+            free_resources(args, kernel, padded_img, padded_buffer, backup);
+            bail_out("Could not backup image, extents were wrong");
         }
         // open benchmark files
         // TODO: make this definable by argument
@@ -58,7 +62,6 @@ int main(int argc, char **argv) {
             bail_out("Could not open benchmark output files");
         }
         // start benchmarking
-        // TODO: make this definable by argument
         for (int i = 0; i < REPITION; ++i) {
             if (copy_padded_image(backup, padded_img) < 0) {
                 free_resources(args, kernel, padded_img, padded_buffer, backup);

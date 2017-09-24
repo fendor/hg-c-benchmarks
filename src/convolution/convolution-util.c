@@ -358,7 +358,7 @@ int copy_padded_image(ImageWithPadding *padded_from, ImageWithPadding *padded_to
     if (padded_from == NULL || padded_to == NULL) {
         return -1;
     }
-    if (padded_from->width != padded_to->width || padded_from->height != padded_to->width) {
+    if (padded_from->width != padded_to->width || padded_from->height != padded_to->height) {
         return -2;
     }
     int width = padded_from->width;
