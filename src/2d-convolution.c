@@ -7,8 +7,8 @@
 #include "convolution/convolution-util.h"
 #include "convolution/convolution-run.h"
 
-#ifndef REPITION
-#define REPITION (1)
+#ifndef REPETITION
+#define REPETITION (10)
 #endif
 
 /**
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
             bail_out("Could not open benchmark output files");
         }
         // start benchmarking
-        for (int i = 0; i < REPITION; ++i) {
+        for (int i = 0; i < REPETITION; ++i) {
             if (copy_padded_image(backup, padded_img) < 0) {
                 free_resources(args, kernel, padded_img, padded_buffer, backup);
                 bail_out("Could not restore image, something must have been changed");

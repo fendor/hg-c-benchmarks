@@ -3,8 +3,8 @@
 #include "nbody/nbody-run.h"
 
 
-#ifndef REPITION
-#define REPITION (1)
+#ifndef REPETITION
+#define REPETITION (10)
 #endif
 
 
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     FILE *check = fopen("../nbody.res", "w+");
 
     if (planets != NULL && buffer != NULL && res != NULL && check != NULL) {
-        for (int n = 0; n < REPITION; ++n) {
+        for (int n = 0; n < REPETITION; ++n) {
             for (int i = 0; i < args->size; i++) {
                 fill_planet(&planets[i], i);
             }
