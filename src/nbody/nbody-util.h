@@ -28,9 +28,9 @@ struct Float3D {
  * The benchmarks do not make sense without all variables set.
  */
 struct arguments {
-    ssize_t size;
-    ssize_t iterations;
-    ssize_t number_of_processes;
+    int size;
+    int iterations;
+    int number_of_processes;
     bool debug;
 };
 
@@ -69,7 +69,7 @@ void free_resources(Float3D *planets, Float3D *buffer, FILE *p_file, FILE *q_fil
  * @param planets Planets that shall be written
  * @param size Number of Planets
  */
-void pretty_print(FILE *fd, Float3D *planets, ssize_t size);
+void pretty_print(FILE *fd, Float3D *planets, int size);
 
 /**
  * Parse the arguments of this program

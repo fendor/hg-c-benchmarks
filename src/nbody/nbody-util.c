@@ -4,7 +4,7 @@
 
 #include "nbody-util.h"
 
-void pretty_print(FILE *fd, Float3D *planets, ssize_t size) {
+void pretty_print(FILE *fd, Float3D *planets, int size) {
     for (int i = 0; i < size; i++) {
         Float3D p = planets[i];
         fprintf(fd, "(%g, %g, %g)\n", p.x, p.y, p.z);
