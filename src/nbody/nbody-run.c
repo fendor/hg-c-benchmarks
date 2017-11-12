@@ -14,7 +14,7 @@ void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out) {
     out->z += dz * factor;
 }
 
-void accel(Float3D *planets, Float3D *buffer, int index, ssize_t size) {
+void accel(Float3D *planets, Float3D *buffer, int index, int size) {
     Float3D acc = {.x = 0.0, .y = 0.0, .z = 0.0};
     for (int i = 0; i < size; i++) {
         pair_wise_accel(planets[index], planets[i], &acc);
@@ -25,7 +25,7 @@ void accel(Float3D *planets, Float3D *buffer, int index, ssize_t size) {
 }
 
 void
-run(Float3D *planets, Float3D *buffer, ssize_t number_of_planets, ssize_t iterations, ssize_t number_of_processes) {
+run(Float3D *planets, Float3D *buffer, int number_of_planets, int iterations, int number_of_processes) {
     for (int i = 0; i < iterations; i++) {
 #pragma omp parallel for num_threads(number_of_processes)
         for (int val = 0; val < number_of_planets; val++) {

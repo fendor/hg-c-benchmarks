@@ -28,10 +28,10 @@ void pair_wise_accel(Float3D p1, Float3D p2, Float3D *out);
  *
  * @param planets Planets that are being simulated
  * @param buffer Buffer to save results to
- * @param index Index of the planet which accerlations is being computed
+ * @param index Index of th^e planet which accerlations is being computed
  * @param size Size of the overall planets
  */
-void accel(Float3D *planets, Float3D *buffer, int index, ssize_t size);
+void accel(Float3D *planets, Float3D *buffer, int index, int size);
 
 /**
  * Runs the simulation for a given number of planets for a given number of times
@@ -43,6 +43,6 @@ void accel(Float3D *planets, Float3D *buffer, int index, ssize_t size);
  * @param iterations number of iterations the simulation should be run
  * @param number_of_processes that shall be used to run
  */
-void run(Float3D *planets, Float3D *buffer, ssize_t number_of_planets, ssize_t iterations, ssize_t number_of_processes);
+void run(Float3D *planets, Float3D *buffer, int number_of_planets, int iterations, int number_of_processes);
 
 #endif //HG_C_BENCHMARKS_NBODY_RUN_H
